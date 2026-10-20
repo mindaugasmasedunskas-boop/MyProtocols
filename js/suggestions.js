@@ -8,7 +8,7 @@ function showSuggestionForm() {
         document.getElementById("app");
 
     // Siūlymus gali teikti tik prisijungęs vartotojas
-    if (!currentUser) {
+    if (!currentUser || authLoading || logoutPending || logoutFailed) {
 
         app.innerHTML = `
 
@@ -99,7 +99,7 @@ async function sendSuggestion() {
 
     // Papildoma apsauga:
     // neprisijungęs vartotojas siūlymo išsiųsti negali
-    if (!currentUser) {
+    if (!currentUser || authLoading || logoutPending || logoutFailed) {
         showLogin();
         return;
     }
@@ -154,17 +154,24 @@ async function sendSuggestion() {
     };
 
 
-    const { error } =
-        await supabaseClient
+    const version = authVersion;
+    let error;
+    try {
+        ({ error } = await supabaseClient
             .from("suggestions")
-            .insert(suggestion);
+            .insert(suggestion));
+    } catch (requestError) {
+        error = requestError;
+    }
+    if (version !== authVersion ||
+        document.getElementById("suggestionMessage") !== message) return;
 
 
     if (error) {
 
         message.textContent =
             "Nepavyko išsiųsti: " +
-            error.message;
+            errorText(error);
 
         return;
     }

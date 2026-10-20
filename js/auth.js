@@ -1,196 +1,200 @@
 let currentUser = null;
 let currentProfile = null;
-
+let authVersion = 0;
+let authLoading = false;
+let authError = "";
+let authSubscription = null;
+let authSyncPromise = Promise.resolve();
+let loginPending = false;
+let logoutPending = false;
+let logoutFailed = false;
 
 function showLogin() {
+    if (logoutPending || logoutFailed) return;
 
-    const app =
-        document.getElementById("app");
-
-
-    app.innerHTML = `
-
+    document.getElementById("app").innerHTML = `
         <div class="login-box">
-
             <h2>Prisijungimas</h2>
-
-
-            <input
-                id="email"
-                type="email"
-                placeholder="El. paštas"
-            >
-
-
-            <input
-                id="password"
-                type="password"
-                placeholder="Slaptažodis"
-            >
-
-
-            <button
-                class="primary"
-                onclick="login()">
-
-                Prisijungti
-
-            </button>
-
-
-            <button
-                onclick="showProtocolList()">
-
-                Atšaukti
-
-            </button>
-
-
-            <div
-                id="loginMessage"
-                class="message">
-            </div>
-
+            <input id="email" type="email" placeholder="El. paštas" autocomplete="username">
+            <input id="password" type="password" placeholder="Slaptažodis" autocomplete="current-password">
+            <button id="loginButton" class="primary" onclick="login()">Prisijungti</button>
+            <button onclick="showProtocolList()">Atšaukti</button>
+            <div id="loginMessage" class="message" role="alert"></div>
         </div>
     `;
 }
 
-
 async function login() {
+    if (loginPending || logoutPending || logoutFailed) return;
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const message = document.getElementById("loginMessage");
+    const button = document.getElementById("loginButton");
+    if (!emailInput || !passwordInput || !message) return;
 
-    const email =
-        document
-            .getElementById("email")
-            .value
-            .trim();
-
-
-    const password =
-        document
-            .getElementById("password")
-            .value;
-
-
-    const message =
-        document.getElementById(
-            "loginMessage"
-        );
-
-
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
     if (!email || !password) {
-
-        message.textContent =
-            "Įveskite el. paštą ir slaptažodį.";
-
+        message.textContent = "Įveskite el. paštą ir slaptažodį.";
         return;
     }
 
+    loginPending = true;
+    if (button) button.disabled = true;
+    message.textContent = "Jungiamasi...";
+    const version = authVersion;
+    try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        if (!data?.user) throw new Error("Negauti prisijungusio naudotojo duomenys.");
 
-    const { data, error } =
-        await supabaseClient.auth
-            .signInWithPassword({
-
-                email: email,
-                password: password
-
-            });
-
-
-    if (error) {
-
-        message.textContent =
-            "Prisijungti nepavyko: " +
-            error.message;
-
-        return;
+        // The auth listener normally starts this refresh. Keep a fallback for
+        // clients which have not delivered the event before signIn resolves.
+        if (version === authVersion) {
+            queueAuthSync(data.session || { user: data.user });
+        }
+        await authSyncPromise;
+    } catch (error) {
+        if (version !== authVersion) return;
+        if (document.getElementById("loginMessage") === message) {
+            message.textContent = "Prisijungti nepavyko: " + errorText(error);
+        } else {
+            authError = "Prisijungti nepavyko: " + errorText(error);
+            showProtocolList();
+        }
+    } finally {
+        loginPending = false;
+        if (button) button.disabled = false;
     }
-
-
-    currentUser = data.user;
-
-    await loadProfile();
-
-    showProtocolList();
 }
 
+// Clear the UI and invalidate pending reads BEFORE awaiting any network call.
+function beginAuthChange(user) {
+    authVersion += 1;
+    currentUser = user || null;
+    currentProfile = null;
+    authLoading = true;
+    authError = "";
+    clearProtocols();
+    showProtocolList();
+    return authVersion;
+}
 
-// =====================================================
-// LOGOUT
-// =====================================================
+function queueAuthSync(session) {
+    const user = session?.user || null;
+    const version = beginAuthChange(user);
+
+    // Do not await Supabase requests inside its synchronous auth callback:
+    // defer them until the callback and the SDK's auth lock have completed.
+    authSyncPromise = new Promise(resolve => {
+        setTimeout(async () => {
+            try {
+                if (version !== authVersion) return;
+                if (user) await loadProfile(user, version);
+                if (version !== authVersion) return;
+                await loadProtocols();
+            } catch (error) {
+                if (version === authVersion) {
+                    authError = "Nepavyko atnaujinti prisijungimo būsenos: " + errorText(error);
+                }
+            } finally {
+                if (version === authVersion) {
+                    authLoading = false;
+                    showProtocolList();
+                }
+                resolve();
+            }
+        }, 0);
+    });
+    return authSyncPromise;
+}
 
 async function logout() {
+    if (logoutPending) return;
+    logoutPending = true;
+    logoutFailed = false;
+    const version = beginAuthChange(null);
 
-    await supabaseClient.auth.signOut();
-
-    currentUser = null;
-    currentProfile = null;
-
-    showProtocolList();
+    try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+    } catch (error) {
+        if (version !== authVersion) return;
+        // A failed server logout must not restore cached privileges or data.
+        // Keep the UI closed and provide an explicit logout retry.
+        logoutFailed = true;
+        authError = "Atsijungti nepavyko. Sesija gali būti likusi aktyvi. Bandykite atsijungti dar kartą: " + errorText(error);
+        logoutPending = false;
+        authLoading = false;
+        const pending = loadProtocols();
+        showProtocolList();
+        await pending;
+        if (version === authVersion) showProtocolList();
+        return;
+    }
+    logoutPending = false;
+    await queueAuthSync(null);
 }
 
-
-// =====================================================
-// START
-// =====================================================
+async function refreshSession() {
+    if (logoutPending || logoutFailed) return;
+    const version = beginAuthChange(null);
+    try {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) throw error;
+        if (version === authVersion) queueAuthSync(data?.session || null);
+        await authSyncPromise;
+    } catch (error) {
+        if (version !== authVersion) return;
+        authLoading = false;
+        authError = "Nepavyko patikrinti prisijungimo būsenos: " + errorText(error);
+        showProtocolList();
+    }
+}
 
 async function startApp() {
-
-    const {
-        data: { session }
-    } = await supabaseClient.auth.getSession();
-
-    if (session && session.user) {
-
-        currentUser = session.user;
-
-        await loadProfile();
+    try {
+        if (!supabaseClient) throw new Error(supabaseInitializationError);
+        if (!authSubscription) {
+            const { data } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+                if (logoutPending) return;
+                if (logoutFailed && session?.user) return;
+                logoutFailed = false;
+                queueAuthSync(session);
+            });
+            authSubscription = data.subscription;
+        }
+        await refreshSession();
+    } catch (error) {
+        beginAuthChange(null);
+        authLoading = false;
+        authError = "Nepavyko paleisti programos: " + errorText(error);
+        showProtocolList();
     }
-
-    await loadProtocols();
-
-    showProtocolList();
 }
 
-
-// =====================================================
-// PROFILE
-// =====================================================
-
-async function loadProfile() {
-
-    if (!currentUser) {
-        currentProfile = null;
-        return;
-    }
-
-    const { data, error } =
-        await supabaseClient
+async function loadProfile(user = currentUser, version = authVersion) {
+    if (!user || version !== authVersion) return;
+    try {
+        const { data, error } = await supabaseClient
             .from("profiles")
-            .select("*")
-            .eq("id", currentUser.id)
+            .select("id,role")
+            .eq("id", user.id)
             .maybeSingle();
-
-    if (error) {
-
-        console.error(
-            "Nepavyko gauti profilio:",
-            error
-        );
-
+        if (error) throw error;
+        if (version !== authVersion) return;
+        currentProfile = data;
+        if (!data) {
+            authError = "Naudotojo profilis nerastas. Administratoriaus teisės nesuteiktos.";
+        }
+    } catch (error) {
+        if (version !== authVersion) return;
         currentProfile = null;
-        return;
+        authError = "Nepavyko gauti profilio. Administratoriaus teisės nesuteiktos: " + errorText(error);
     }
-
-    currentProfile = data;
 }
-
 
 function isAdmin() {
-
-    return (
-        currentUser &&
-        currentProfile &&
-        currentProfile.role === "admin"
-    );
+    return Boolean(!authLoading && !logoutPending && !logoutFailed &&
+        currentUser && currentProfile?.role === "admin");
 }
-

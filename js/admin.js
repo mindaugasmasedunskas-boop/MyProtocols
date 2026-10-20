@@ -41,14 +41,22 @@ async function showAdminSuggestions() {
     `;
 
 
-    const { data, error } =
-        await supabaseClient
+    const version = authVersion;
+    const expectedContainer = document.getElementById("adminSuggestions");
+    let data, error;
+    try {
+        ({ data, error } = await supabaseClient
             .from("suggestions")
             .select("*")
             .order(
                 "created_at",
                 { ascending: false }
-            );
+            ));
+    } catch (requestError) {
+        error = requestError;
+    }
+    if (version !== authVersion || !isAdmin() ||
+        document.getElementById("adminSuggestions") !== expectedContainer) return;
 
 
     const container =
@@ -62,7 +70,7 @@ async function showAdminSuggestions() {
         container.innerHTML = `
             <div class="message">
                 Nepavyko gauti siūlymų:
-                ${escapeHtml(error.message)}
+                ${escapeHtml(errorText(error))}
             </div>
         `;
 
@@ -101,7 +109,7 @@ async function showAdminSuggestions() {
 
                     <div
                         class="suggestion-card"
-                        id="suggestion-${suggestion.id}">
+                        id="suggestion-${escapeHtml(suggestion.id)}">
 
                         <h3>
 
@@ -140,7 +148,7 @@ ${escapeHtml(suggestion.content || "")}
                         <div class="suggestion-controls">
 
                             <select
-                                id="status-${suggestion.id}">
+                                id="status-${escapeHtml(suggestion.id)}">
 
                                 <option
                                     value="new"
@@ -170,7 +178,7 @@ ${escapeHtml(suggestion.content || "")}
 
 
                             <textarea
-                                id="comment-${suggestion.id}"
+                                id="comment-${escapeHtml(suggestion.id)}"
                                 placeholder="Administratoriaus komentaras..."
                             >${escapeHtml(
                                 suggestion.admin_comment || ""
@@ -183,9 +191,7 @@ ${escapeHtml(suggestion.content || "")}
 
                             <button
                                 class="primary"
-                                onclick="saveSuggestion(
-                                    '${suggestion.id}'
-                                )">
+                                data-save-suggestion>
 
                                 Išsaugoti
 
@@ -195,7 +201,7 @@ ${escapeHtml(suggestion.content || "")}
 
 
                         <div
-                            id="message-${suggestion.id}"
+                            id="message-${escapeHtml(suggestion.id)}"
                             class="message">
                         </div>
 
@@ -204,6 +210,9 @@ ${escapeHtml(suggestion.content || "")}
 
             })
             .join("");
+    container.querySelectorAll("[data-save-suggestion]").forEach((button, index) => {
+        button.addEventListener("click", () => saveSuggestion(suggestions[index].id));
+    });
 }
 
 
@@ -258,8 +267,10 @@ async function saveSuggestion(id) {
         "Saugoma...";
 
 
-    const { error } =
-        await supabaseClient
+    const version = authVersion;
+    let error;
+    try {
+        ({ error } = await supabaseClient
             .from("suggestions")
             .update({
 
@@ -272,14 +283,19 @@ async function saveSuggestion(id) {
                     new Date().toISOString()
 
             })
-            .eq("id", id);
+            .eq("id", id));
+    } catch (requestError) {
+        error = requestError;
+    }
+    if (version !== authVersion || !isAdmin() ||
+        document.getElementById("message-" + id) !== message) return;
 
 
     if (error) {
 
         message.textContent =
             "Nepavyko išsaugoti: " +
-            error.message;
+            errorText(error);
 
         return;
     }
@@ -290,7 +306,10 @@ async function saveSuggestion(id) {
 
 
     setTimeout(
-        () => showAdminSuggestions(),
+        () => {
+            if (version === authVersion && isAdmin() &&
+                document.getElementById("message-" + id) === message) showAdminSuggestions();
+        },
         500
     );
 }

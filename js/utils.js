@@ -15,10 +15,8 @@ function escapeHtml(value) {
 }
 
 
-function escapeJs(value) {
-
-    return String(value)
-
-        .replaceAll("\\", "\\\\")
-        .replaceAll("'", "\\'");
+function errorText(error) {
+    return error && typeof error.message === "string" && error.message
+        ? error.message
+        : "Netikėta klaida. Patikrinkite ryšį ir bandykite dar kartą.";
 }

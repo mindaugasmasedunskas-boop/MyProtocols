@@ -1,305 +1,198 @@
 let protocols = [];
 let currentCategory = "Visi";
+let protocolRequestVersion = 0;
+let protocolsLoading = false;
+let protocolsError = "";
 
-// =====================================================
-// PROTOCOLS
-// =====================================================
+function canReadProtocol(protocol) {
+    // Individual auditor permissions are not implemented yet. Admin status
+    // deliberately does not grant restricted access. Unknown levels are denied.
+    return protocol?.access_level === "public";
+}
+
+function clearProtocols() {
+    protocolRequestVersion += 1;
+    protocols = [];
+    currentCategory = "Visi";
+    protocolsError = "";
+    protocolsLoading = false;
+}
 
 async function loadProtocols() {
-
-    const { data, error } =
-        await supabaseClient
+    const requestVersion = ++protocolRequestVersion;
+    const sessionVersion = authVersion;
+    protocols = [];
+    protocolsLoading = true;
+    protocolsError = "";
+    try {
+        const { data, error } = await supabaseClient
             .from("protocols")
-            .select("*")
+            .select("id,title,category,content,access_level")
+            .eq("access_level", "public")
             .order("title");
-
-    if (error) {
-
-        console.error(
-            "Nepavyko gauti protokolų:",
-            error
-        );
-
+        if (error) throw error;
+        if (requestVersion !== protocolRequestVersion || sessionVersion !== authVersion) return false;
+        // Defense in depth for an unexpected response. This does not replace RLS.
+        protocols = (data || []).filter(canReadProtocol);
+        return true;
+    } catch (error) {
+        if (requestVersion !== protocolRequestVersion || sessionVersion !== authVersion) return false;
         protocols = [];
-        return;
+        protocolsError = "Nepavyko gauti protokolų: " + errorText(error);
+        return false;
+    } finally {
+        if (requestVersion === protocolRequestVersion && sessionVersion === authVersion) {
+            protocolsLoading = false;
+        }
     }
+}
 
-    protocols = data || [];
+async function reloadProtocols() {
+    const version = authVersion;
+    const pending = loadProtocols();
+    showProtocolList();
+    await pending;
+    if (version === authVersion) showProtocolList();
 }
 
 function selectCategory(category) {
-
     currentCategory = category;
-
     showProtocolList();
 }
 
 function renderProtocols() {
-
-    const list =
-        document.getElementById("protocolList");
-
+    const list = document.getElementById("protocolList");
     if (!list) return;
 
-
-    const searchInput =
-        document.getElementById("searchInput");
-
-    const search =
-        searchInput
-            ? searchInput.value.trim().toLowerCase()
-            : "";
-
-
-    const filtered =
-        protocols.filter(protocol => {
-
-            const categoryMatch =
-                currentCategory === "Visi" ||
-                protocol.category === currentCategory;
-
-
-            const searchableText = `
-                ${protocol.title || ""}
-                ${protocol.category || ""}
-                ${protocol.content || ""}
-            `.toLowerCase();
-
-
-            const searchMatch =
-                !search ||
-                searchableText.includes(search);
-
-
-            return categoryMatch && searchMatch;
-        });
-
-
-    if (filtered.length === 0) {
-
+    if (authLoading || protocolsLoading) {
+        list.innerHTML = '<div class="empty" role="status">Kraunama...</div>';
+        return;
+    }
+    if (protocolsError) {
         list.innerHTML = `
-            <div class="empty">
-                Protokolų nerasta.
-            </div>
+            <div class="message" role="alert">${escapeHtml(protocolsError)}</div>
+            <button onclick="reloadProtocols()">Bandyti dar kartą</button>
         `;
-
         return;
     }
 
+    const search = document.getElementById("searchInput")?.value.trim().toLowerCase() || "";
+    const filtered = protocols.filter(protocol => {
+        if (!canReadProtocol(protocol)) return false;
+        const categoryMatch = currentCategory === "Visi" || protocol.category === currentCategory;
+        const text = `${protocol.title || ""} ${protocol.category || ""} ${protocol.content || ""}`.toLowerCase();
+        return categoryMatch && (!search || text.includes(search));
+    });
 
-    list.innerHTML =
-        filtered
-            .map(protocol => `
-
-                <div
-                    class="protocol"
-                    onclick="showProtocol('${protocol.id}')">
-
-                    <div class="category">
-                        ${escapeHtml(protocol.category || "")}
-                    </div>
-
-                    <h2>
-                        ${escapeHtml(protocol.title || "")}
-                    </h2>
-
-                </div>
-
-            `)
-            .join("");
+    list.replaceChildren();
+    if (!filtered.length) {
+        list.innerHTML = '<div class="empty">Protokolų nerasta.</div>';
+        return;
+    }
+    for (const protocol of filtered) {
+        const card = document.createElement("div");
+        card.className = "protocol";
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        const category = document.createElement("div");
+        category.className = "category";
+        category.textContent = protocol.category || "";
+        const title = document.createElement("h2");
+        title.textContent = protocol.title || "";
+        card.append(category, title);
+        card.addEventListener("click", () => showProtocol(protocol.id));
+        card.addEventListener("keydown", event => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                showProtocol(protocol.id);
+            }
+        });
+        list.append(card);
+    }
 }
-
-
-// =====================================================
-// PROTOCOL DETAIL
-// =====================================================
 
 function showProtocol(id) {
-
-    const protocol =
-        protocols.find(
-            p => String(p.id) === String(id)
-        );
-
-    if (!protocol) return;
-
-
-    const app =
-        document.getElementById("app");
-
-
-    app.innerHTML = `
-
+    const protocol = protocols.find(p => String(p.id) === String(id) && canReadProtocol(p));
+    if (!protocol || authLoading || logoutPending) {
+        showProtocolList();
+        return;
+    }
+    document.getElementById("app").innerHTML = `
         <div class="detail-buttons">
-
-            <button onclick="showProtocolList()">
-                ← Grįžti
-            </button>
-
-            <button
-                class="primary"
-                onclick="copyProtocol('${protocol.id}')">
-
-                Kopijuoti tekstą
-
-            </button>
-
+            <button onclick="showProtocolList()">← Grįžti</button>
+            <button id="copyProtocolButton" class="primary">Kopijuoti tekstą</button>
         </div>
-
-
         <div class="detail">
-
-            <div class="category">
-                ${escapeHtml(protocol.category || "")}
-            </div>
-
-            <h2>
-                ${escapeHtml(protocol.title || "")}
-            </h2>
-
+            <div class="category">${escapeHtml(protocol.category || "")}</div>
+            <h2>${escapeHtml(protocol.title || "")}</h2>
             <div class="detail-content">${escapeHtml(protocol.content || "")}</div>
-
         </div>
     `;
+    document.getElementById("copyProtocolButton").addEventListener("click", () => copyProtocol(protocol.id));
 }
-
 
 async function copyProtocol(id) {
-
-    const protocol =
-        protocols.find(
-            p => String(p.id) === String(id)
-        );
-
-    if (!protocol) return;
-
-
+    const protocol = protocols.find(p => String(p.id) === String(id) && canReadProtocol(p));
+    if (!protocol || authLoading || logoutPending) return;
     try {
-
-        await navigator.clipboard.writeText(
-            protocol.content || ""
-        );
-
+        await navigator.clipboard.writeText(protocol.content || "");
         alert("Tekstas nukopijuotas.");
-
     } catch {
-
-        alert(
-            "Nepavyko nukopijuoti teksto."
-        );
+        alert("Nepavyko nukopijuoti teksto.");
     }
 }
 
-
 function showProtocolList() {
+    const app = document.getElementById("app");
+    const categories = ["Visi", ...new Set(protocols.filter(canReadProtocol).map(p => p.category).filter(Boolean))];
+    if (!categories.includes(currentCategory)) currentCategory = "Visi";
 
-    const app =
-        document.getElementById("app");
-
-    const categories =
-        [
-            "Visi",
-            ...new Set(
-                protocols
-                    .map(p => p.category)
-                    .filter(Boolean)
-            )
-        ];
-
-    let userArea = "";
-
-    if (currentUser) {
-
+    let userArea;
+    if (logoutPending || logoutFailed) {
+        userArea = `<button onclick="logout()" ${logoutPending ? "disabled" : ""}>
+            ${logoutPending ? "Atsijungiama..." : "Bandyti atsijungti dar kartą"}
+        </button>`;
+    } else if (currentUser) {
         userArea = `
-            <span class="user-info">
-                ${escapeHtml(currentUser.email || "")}
-                ${isAdmin() ? " (admin)" : ""}
-            </span>
-
-            <button onclick="logout()">
-                Atsijungti
-            </button>
+            <span class="user-info">${escapeHtml(currentUser.email || "")}${isAdmin() ? " (admin)" : ""}</span>
+            <button onclick="logout()">Atsijungti</button>
         `;
-
     } else {
-
-        userArea = `
-            <button onclick="showLogin()">
-                Prisijungti
-            </button>
-        `;
+        userArea = `<button onclick="showLogin()" ${authLoading ? "disabled" : ""}>Prisijungti</button>`;
     }
 
-
-    let adminArea = "";
-
-    if (isAdmin()) {
-
-        adminArea = `
-            <div class="admin-box">
-
-                <strong>
-                    Administratoriaus režimas
-                </strong>
-
-                <div style="margin-top:8px;">
-                    Galite valdyti protokolus ir naudotojų pasiūlymus.
-                </div>
-
-                <div class="admin-actions">
-
-                    <button
-                        class="primary"
-                        onclick="showAdminSuggestions()">
-                        Gauti siūlymai
-                    </button>
-
-                </div>
-
+    const adminArea = isAdmin() ? `
+        <div class="admin-box">
+            <strong>Administratoriaus režimas</strong>
+            <div style="margin-top:8px;">Galite valdyti protokolus ir naudotojų pasiūlymus.</div>
+            <div class="admin-actions">
+                <button class="primary" onclick="showAdminSuggestions()">Gauti siūlymai</button>
             </div>
-        `;
-    }
-
+        </div>
+    ` : "";
 
     app.innerHTML = `
-
-        <div class="topbar">
-            ${userArea}
-        </div>
-
+        <div class="topbar">${userArea}</div>
+        ${authError ? `<div class="message" role="alert">${escapeHtml(authError)}</div>
+            ${!logoutPending && !logoutFailed ? '<button onclick="startApp()">Bandyti dar kartą</button>' : ""}` : ""}
         ${adminArea}
-
-        <input
-            id="searchInput"
-            class="search"
-            type="text"
-            placeholder="Ieškoti protokolo..."
-            oninput="renderProtocols()"
-        >
-
-        <div class="categories">
-
-            ${categories.map(category => `
-
-                <button
-                    class="category-button
-                    ${category === currentCategory ? "active" : ""}"
-                    onclick="selectCategory('${escapeJs(category)}')">
-
-                    ${escapeHtml(category)}
-
-                </button>
-
-            `).join("")}
-
-            <button onclick="showSuggestionForm()">
-                Siūlymai
-            </button>
-
-        </div>
-
+        <input id="searchInput" class="search" type="text" placeholder="Ieškoti protokolo..." oninput="renderProtocols()">
+        <div class="categories" id="categoryButtons"></div>
         <div id="protocolList"></div>
     `;
 
+    const categoryButtons = document.getElementById("categoryButtons");
+    for (const category of categories) {
+        const button = document.createElement("button");
+        button.className = "category-button" + (category === currentCategory ? " active" : "");
+        button.textContent = category;
+        button.addEventListener("click", () => selectCategory(category));
+        categoryButtons.append(button);
+    }
+    const suggestionsButton = document.createElement("button");
+    suggestionsButton.textContent = "Siūlymai";
+    suggestionsButton.disabled = authLoading || logoutPending || logoutFailed;
+    suggestionsButton.addEventListener("click", showSuggestionForm);
+    categoryButtons.append(suggestionsButton);
     renderProtocols();
 }
