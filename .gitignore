@@ -1,0 +1,73 @@
+# Dependencies and generated output; source and migrations remain trackable.
+node_modules/
+.npm/
+.pnpm-store/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+.cache/
+
+# Local environment/configuration. Example files must contain placeholders only.
+.env
+.env.*
+!.env.example
+.envrc
+*.local
+*.local.*
+.npmrc
+.netrc
+.git-credentials
+/local/
+/.codex/local/
+.vscode/
+.idea/
+*.code-workspace
+
+# Credentials and private key material. Never use these rules as a secret scanner.
+secrets/
+.secrets/
+credentials/
+.credentials/
+credentials.json
+service-account*.json
+*-service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Local Supabase state, database copies and potentially sensitive audit exports.
+.supabase/
+supabase/.temp/
+supabase/.branches/
+/backups/
+/dumps/
+/exports/
+/audit-results/
+*.dump
+*.backup
+*.sql.gz
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporary/editor/OS files.
+/tmp/
+/temp/
+*.log
+*.log.*
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# js/config.js is intentionally tracked and may contain public client data only.
+# Do not ignore *.sql: reviewed schema/RLS migrations belong in version control.
