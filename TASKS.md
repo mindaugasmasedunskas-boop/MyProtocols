@@ -22,6 +22,20 @@ ar tikros duomenų bazės saugumo įrodymas.
   SQL katalogų užklausos schemai, politikoms bei privilegijoms surinkti.
   Tai nėra įvykdytas tikro serverio RLS auditas. SQL failų projekte dar nėra.
 
+## Patvirtinti Supabase saugumo pakeitimai
+
+Šių dviejų veiksmų atlikimą patvirtino naudotojas. Šioje dokumentacijos
+pataisoje Supabase užklausos nevykdytos ir nustatymai nekeisti; tai nėra
+nepriklausomas pakartotinis visos serverio apsaugos patikrinimas.
+
+- [x] `protocols_authenticated_read` SELECT RLS politika pakeista į
+  `access_level = 'public'` — patvirtinta.
+- [x] `profiles` lentelės `TRUNCATE` teisės `anon` ir `authenticated`
+  rolėms atšauktos — patvirtinta.
+
+Šie patvirtinti pakeitimai neįrodo kitų politikų, privilegijų ar viso
+serverio saugumo. Likę nepatikrinti klausimai pateikti toliau.
+
 ## Suderinti reikalavimai, bet nepatvirtinta serverio realizacija
 
 - Viešus protokolus gali skaityti svečiai ir registruoti naudotojai.
@@ -35,6 +49,11 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Pirmas prioritetas: neužbaigtas Supabase saugumo auditas
 
+- [ ] `protocols` ir `suggestions` lentelių `TRUNCATE` teisių atšaukimas
+  `anon` ir `authenticated` rolėms dar nepatvirtintas; patikrinti faktines
+  abiejų lentelių privilegijas. Nežymėti kaip atlikta be patvirtinimo.
+- [ ] Užbaigti visą serverio saugumo auditą. Dviejų pirmiau nurodytų
+  pakeitimų patvirtinimas neužbaigia toliau išvardytų patikrų.
 - [ ] Gauti tikras schemas, lentelių savininkus, RLS/FORCE RLS būklę,
   stulpelių tipus, apribojimus, raktus, numatytąsias reikšmes ir indeksus.
 - [ ] Gauti visas aktualias RLS politikas, efektyvias schemų, lentelių,
