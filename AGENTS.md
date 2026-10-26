@@ -4,6 +4,16 @@
 apimtis turi pirmenybę: prašymas tik analizuoti nesuteikia leidimo keisti,
 kurti commit ar siųsti pakeitimų.
 
+## Kalba ir dokumentacija
+
+- Bendravimą su naudotoju, Codex ataskaitas, dokumentaciją ir naudotojo
+  sąsajos tekstus rašyk taisyklinga lietuvių kalba.
+- Neįterpk atsitiktinių kitų kalbų žodžių ar rašto sistemų. Išimtys: programinis
+  kodas, API pavadinimai, failų keliai, techniniai terminai, oficialūs
+  pavadinimai ir būtinos citatos.
+- Prieš pateikdamas ataskaitą patikrink, ar joje nėra netyčinių svetimos
+  kalbos fragmentų.
+
 ## Prieš pakeitimus
 
 1. Perskaityk `PROJECT.md`, `TASKS.md` ir aktualius šaltinio failus.
