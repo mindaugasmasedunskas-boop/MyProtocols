@@ -6,6 +6,9 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Šioje darbo šakoje naudotojui matomas pavadinimas pakeistas iš
+  MedProtocols į MyProtocols: `index.html` kortelės pavadinime ir antraštėje.
+  Katalogo, saugyklos ir Supabase objektų pavadinimai nekeičiami.
 - [x] Esamo HTML, CSS ir septynių JavaScript failų statinė analizė atlikta;
   pradinės išvados pateiktos projekto pokalbyje.
 - [x] Pradiniai devyni failai išsaugoti Git commitu `b6aea14`.
@@ -94,7 +97,6 @@ galima įtraukti tik peržiūrėtas, paslapčių neturinčias išvadas ar migrac
 - [ ] Sutvarkyti pasiūlymų dubliavimą ir prireikus autoriaus atsakymų peržiūrą.
 - [ ] Įvertinti puslapiavimą, paieškos būsenos išsaugojimą, prieinamumą ir
   tikslios Supabase CDN versijos fiksavimą.
-- [ ] Atskirai suplanuoti matomo pavadinimo keitimą iš MedProtocols į MyProtocols.
 - [ ] Pagal poreikį parengti CI ir dokumentuotą diegimo procesą.
 
 ## Dabartinis dokumentacijos pakeitimų rinkinys

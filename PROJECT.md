@@ -2,8 +2,9 @@
 
 Būklė dokumentuota 2026-10-20 pagal esamą kodą ir patikrintus GitHub
 duomenis. Darbinis katalogas: `C:\Projects\medprotocols`.
-Planuojamas produkto pavadinimas yra MyProtocols; `index.html` antraštėje
-ir puslapio pavadinime kol kas tebenaudojamas MedProtocols.
+Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
+`<title>` ir `<h1>` elementuose. Ankstesnis pavadinimas buvo MedProtocols;
+2026-10-20 dokumentavimo metu jis dar buvo rodomas programoje.
 
 ## Technologijos ir paleidimas
 
