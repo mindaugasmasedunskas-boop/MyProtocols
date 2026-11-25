@@ -39,6 +39,16 @@ function compareCategories(a, b) {
         String(a || "").localeCompare(String(b || ""), "lt");
 }
 
+// Category order, then the admin-set sort_order, then title.
+function compareProtocols(a, b) {
+    return compareCategories(a.category, b.category) ||
+        (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0) ||
+        String(a.title || "").localeCompare(String(b.title || ""), "lt");
+}
+
+// Admin drag-and-drop: ordered protocol ids while editing, otherwise null.
+let protocolReorder = null;
+
 function canReadProtocol(protocol) {
     // Individual auditor permissions are not implemented yet. Admin status
     // deliberately does not grant restricted access. Unknown levels are denied.
@@ -49,6 +59,7 @@ function clearProtocols() {
     protocolRequestVersion += 1;
     protocols = [];
     currentCategory = "Visi";
+    protocolReorder = null;
     protocolsError = "";
     protocolsLoading = false;
 }
@@ -62,7 +73,7 @@ async function loadProtocols() {
     try {
         const { data, error } = await supabaseClient
             .from("protocols")
-            .select("id,title,category,content,access_level")
+            .select("id,title,category,content,access_level,sort_order")
             .eq("access_level", "public")
             .order("title");
         if (error) throw error;
@@ -92,6 +103,7 @@ async function reloadProtocols() {
 
 function selectCategory(category) {
     currentCategory = category;
+    protocolReorder = null;
     showProtocolList();
 }
 
@@ -111,14 +123,16 @@ function renderProtocols() {
         return;
     }
 
-    const search = normalizeSearchText(document.getElementById("searchInput")?.value.trim() || "");
+    const reordering = Array.isArray(protocolReorder);
+    const search = reordering ? "" : normalizeSearchText(document.getElementById("searchInput")?.value.trim() || "");
     const filtered = protocols.filter(protocol => {
         if (!canReadProtocol(protocol)) return false;
         const categoryMatch = currentCategory === "Visi" || protocol.category === currentCategory;
         const text = normalizeSearchText(`${protocol.title || ""} ${protocol.category || ""} ${protocol.content || ""}`);
         return categoryMatch && (!search || text.includes(search));
-    }).sort((a, b) => compareCategories(a.category, b.category) ||
-        String(a.title || "").localeCompare(String(b.title || ""), "lt"));
+    }).sort(reordering
+        ? (a, b) => protocolReorder.indexOf(String(a.id)) - protocolReorder.indexOf(String(b.id))
+        : compareProtocols);
 
     list.replaceChildren();
     if (!filtered.length) {
@@ -136,6 +150,14 @@ function renderProtocols() {
         const title = document.createElement("h2");
         title.textContent = protocol.title || "";
         card.append(category, title);
+        if (reordering) {
+            makeDraggable(card, String(protocol.id), (from, to) => {
+                protocolReorder = moveKey(protocolReorder, from, to);
+                renderProtocols();
+            });
+            list.append(card);
+            continue;
+        }
         card.addEventListener("click", () => showProtocol(protocol.id));
         card.addEventListener("keydown", event => {
             if (event.key === "Enter" || event.key === " ") {
@@ -249,13 +271,8 @@ function showProtocolList() {
     `;
 
     renderSectionNav();
-    if (isAdmin()) {
-        const add = document.createElement("button");
-        add.className = "primary";
-        add.textContent = "+ Pridėti algoritmą";
-        add.addEventListener("click", () => showProtocolForm());
-        document.getElementById("sectionNav").append(add);
-    }
+    if (!isAdmin()) protocolReorder = null;
+    if (isAdmin()) renderProtocolAdminTools(document.getElementById("sectionNav"));
     const categoryButtons = document.getElementById("categoryButtons");
     for (const category of categories) {
         const button = document.createElement("button");

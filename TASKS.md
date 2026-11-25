@@ -6,6 +6,15 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Administratoriaus tvarkos keitimas tempiant (šaka `codex/admin-reorder`):
+  pagrindinio ekrano mygtukai („Keisti mygtukų tvarką“, saugoma
+  `app_settings.home_tile_order`) ir algoritmai pasirinktoje kategorijoje
+  („Keisti tvarką“, saugoma `protocols.sort_order`). Kategorijų tvarka lieka
+  fiksuota. Patikra: 50 izoliuotų testų praėjo; vietinėje naršyklėje
+  tempimas patikrintas su imituota admin būsena. [ ] Reikia naudotojo
+  paleisto SQL: `protocols.sort_order` stulpelis ir `app_settings` lentelė
+  (skaito visi, rašo tik admin). Be jo šios versijos skelbti negalima.
+
 - [x] 2026-11-25 įkelta 21 terapinio priėmimo algoritmo juodraštis (SQL
   vykdė naudotojas; failas `exports/` neįtraukiamas į Git). Pavadinimuose
   žymė „[Juodraštis]“; turinys nepatvirtintas ligoninės. Algoritmo įrašymą
