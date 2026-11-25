@@ -47,6 +47,7 @@ async function showContacts() {
     const app = document.getElementById("app");
     app.innerHTML = `
         <div class="topbar">${userAreaHtml()}</div>
+        ${authErrorHtml()}
         <nav class="sections" id="sectionNav"></nav>
         <input id="contactSearch" class="search" type="text" placeholder="Ieškoti kontakto...">
         <div id="contactList"></div>

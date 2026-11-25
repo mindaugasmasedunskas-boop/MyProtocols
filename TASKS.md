@@ -6,12 +6,19 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Codex audito P2 pataisymai (šaka `codex/audit-fixes`): kontaktų
+  skiltyje rodomos autentifikacijos ir atsijungimo klaidos; administratoriaus
+  išsaugojimas tikrina pakeistas eilutes (`.select("id")`) ir nerodo
+  „Išsaugota“, kai niekas nepakeista; pasiūlymo siuntimas blokuoja dvigubą
+  paspaudimą. Patikra: 38 izoliuoti testai praėjo (3 nauji regresijos).
+
 - [x] Kontaktų skiltis (šaka `codex/contacts`): `js/contacts.js`, skyrių
   meniu „Algoritmai / Kontaktai“, paieška, grupavimas pagal skyrių, saugios
-  `tel:` ir `mailto:` nuorodos. Patikra: 35 izoliuoti testai praėjo. Vietinėje
-  naršyklėje skiltis atsidaro; lentelės `contacts` Supabase dar nėra, todėl
-  rodoma klaida. [ ] Naudotojas turi paleisti suderintą `contacts` SQL.
-  Kontaktų redagavimas programoje neįgyvendintas (kol kas per Table Editor).
+  `tel:` ir `mailto:` nuorodos. Patikra: 35 izoliuoti testai praėjo.
+  2026-11-25 naudotojas paleido suderintą `contacts` SQL (RLS: SELECT visiems,
+  keitimas tik admin); svečio API užklausa grąžina 200. Paskelbta svetainėje.
+  Kontaktų redagavimas programoje neįgyvendintas (kol kas per Table Editor),
+  kontaktai po užkrovimo neatnaujinami be puslapio perkrovimo.
 
 - [x] 2026-11-25 Supabase metaduomenų auditas (skaitomosios užklausos,
   vykdė naudotojas; rezultatai Git nesaugomi). Nustatyta:
@@ -97,21 +104,18 @@ serverio saugumo. Likę nepatikrinti klausimai pateikti toliau.
     (RLS jas blokuoja, bet jas verta atšaukti).
 - [ ] Tiesioginėmis API užklausomis su tikromis paskyromis patikrinti
   paprasto naudotojo ir administratoriaus prieigą.
-- [ ] Užbaigti visą serverio saugumo auditą. Dviejų pirmiau nurodytų
-  pakeitimų patvirtinimas neužbaigia toliau išvardytų patikrų.
-- [ ] Gauti tikras schemas, lentelių savininkus, RLS/FORCE RLS būklę,
-  stulpelių tipus, apribojimus, raktus, numatytąsias reikšmes ir indeksus.
-- [ ] Gauti visas aktualias RLS politikas, efektyvias schemų, lentelių,
-  stulpelių ir funkcijų teises, rolių narystę ir numatytąsias privilegijas.
-- [ ] Patikrinti profilių registracijos trigerius, jų funkcijas, rodinius,
-  RPC ir kitus galimus duomenų gavimo kelius.
-- [ ] Patikrinti Dashboard Exposed schemas, registracijos ir anoniminių
-  Auth prisijungimų nustatymus. Vien `authenticated` nebūtinai reiškia
-  nuolatinį registruotą naudotoją, jei įjungti anoniminiai Auth prisijungimai.
-- [ ] Patikrinti, kad `profiles.role` negalima pakeisti savarankiškai per
-  INSERT, UPDATE, UPSERT ar RPC ir negalima paveikti kitų naudotojų teisių.
-- [ ] Patikrinti `suggestions` autorystę, pradinę būseną, administravimo
-  laukų apsaugą ir svetimų pasiūlymų duomenų neprieinamumą.
+- [x] 2026-11-25 metaduomenų auditu gauta: RLS/FORCE RLS būklė, stulpeliai
+  ir numatytosios reikšmės, visos `public` politikos, `anon` ir
+  `authenticated` lentelių teisės, `public` funkcijos ir trigeriai,
+  `handle_new_user()` kodas, Auth registracijos ir anoniminių prisijungimų
+  nustatymai. Rolės savarankiškai pakeisti per API negalima (nėra `profiles`
+  INSERT/UPDATE politikų, trigeris rolę nustato `user`). Svetimų pasiūlymų
+  skaityti negalima.
+- [ ] Dar negauta: `CHECK` apribojimai (pvz., ar `suggestions.status`
+  leidžia `reviewing`, kurį siūlo sąsaja), indeksai, savininkai, rolių
+  narystė, numatytosios privilegijos, Exposed schemas.
+- [ ] Į saugyklą įtraukti schemos ir RLS aprašą (be duomenų), kad TEST
+  aplinką būtų galima atkurti.
 - [ ] Tiesioginėmis API užklausomis patvirtinti svečio, paprasto naudotojo
   ir administratoriaus be auditoriaus teisės prieigą prie public/restricted.
 - [ ] Patikrinti konkretaus restricted ID užklausą, užklausą be filtro,

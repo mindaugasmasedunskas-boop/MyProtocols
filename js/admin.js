@@ -269,8 +269,9 @@ async function saveSuggestion(id) {
 
     const version = authVersion;
     let error;
+    let data;
     try {
-        ({ error } = await supabaseClient
+        ({ data, error } = await supabaseClient
             .from("suggestions")
             .update({
 
@@ -283,7 +284,10 @@ async function saveSuggestion(id) {
                     new Date().toISOString()
 
             })
-            .eq("id", id));
+            .eq("id", id)
+            // Return changed rows: RLS or a deleted row yields an empty
+            // result without an error, which must not look like success.
+            .select("id"));
     } catch (requestError) {
         error = requestError;
     }
@@ -297,6 +301,12 @@ async function saveSuggestion(id) {
             "Nepavyko išsaugoti: " +
             errorText(error);
 
+        return;
+    }
+
+    if (!Array.isArray(data) || !data.length) {
+        message.textContent =
+            "Nepavyko išsaugoti: įrašas nerastas arba neturite teisės jo keisti.";
         return;
     }
 

@@ -91,7 +91,8 @@ function harness(options = {}) {
                     query.filters.push([key, value]);
                     if (query.update) {
                         calls.updates.push(query);
-                        return options.update?.(query) || Promise.resolve({ error: null });
+                        const result = options.update?.(query) || Promise.resolve({ data: [{ id: value }], error: null });
+                        return Object.assign(result, { select: () => result });
                     }
                     return builder;
                 },
@@ -564,4 +565,44 @@ test('auth refresh keeps the user in the contacts section', async () => {
     await h.settle();
     assert.ok(h.document.getElementById('contactList'));
     assert.equal(h.document.getElementById('protocolList'), null);
+});
+
+test('contacts section shows a failed logout error instead of hiding it', async () => {
+    const h = harness({ session, signOut: async () => ({ error: { message: 'tinklo klaida' } }) });
+    await h.run('startApp()');
+    await h.run('showContacts()');
+    await h.run('logout()');
+    assert.ok(h.document.getElementById('contactList'));
+    assert.match(h.app.innerHTML, /Atsijungti nepavyko/);
+});
+
+test('admin save with zero changed rows does not report success', async () => {
+    const id = 's1';
+    const h = harness({
+        session,
+        profile: async () => ({ data: { id: user.id, role: 'admin' }, error: null }),
+        suggestions: async () => ({ data: [{ id, title: 'Test', content: 'Text', status: 'new' }], error: null }),
+        update: async () => ({ data: [], error: null })
+    });
+    await h.run('startApp()');
+    await h.run('showAdminSuggestions()');
+    const button = h.document.getElementById('adminSuggestions').querySelectorAll('[data-save-suggestion]')[0];
+    await button.dispatch('click');
+    const message = h.document.getElementById('message-' + id).textContent;
+    assert.doesNotMatch(message, /^Išsaugota/);
+    assert.match(message, /Nepavyko išsaugoti/);
+});
+
+test('double click on suggestion submit sends only one insert', async () => {
+    const pending = deferred();
+    const h = harness({ session, insert: () => pending.promise });
+    await h.run('startApp()');
+    h.run('showSuggestionForm()');
+    h.document.getElementById('suggestionTitle').value = 'Pasiūlymas';
+    h.document.getElementById('suggestionText').value = 'Tekstas';
+    const first = h.run('sendSuggestion()');
+    const second = h.run('sendSuggestion()');
+    pending.resolve({ error: null });
+    await Promise.all([first, second]);
+    assert.equal(h.calls.inserts.length, 1);
 });
