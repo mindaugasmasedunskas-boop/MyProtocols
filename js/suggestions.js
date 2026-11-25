@@ -77,6 +77,7 @@ function showSuggestionForm() {
 
 
             <button
+                id="suggestionButton"
                 class="primary"
                 onclick="sendSuggestion()">
 
@@ -95,7 +96,11 @@ function showSuggestionForm() {
 }
 
 
+// True while an INSERT is in flight: blocks double clicks and duplicates.
+let suggestionPending = false;
+
 async function sendSuggestion() {
+    if (suggestionPending) return;
 
     // Papildoma apsauga:
     // neprisijungęs vartotojas siūlymo išsiųsti negali
@@ -155,6 +160,10 @@ async function sendSuggestion() {
 
 
     const version = authVersion;
+    const button = document.getElementById("suggestionButton");
+    suggestionPending = true;
+    if (button) button.disabled = true;
+    message.textContent = "Siunčiama...";
     let error;
     try {
         ({ error } = await supabaseClient
@@ -162,6 +171,9 @@ async function sendSuggestion() {
             .insert(suggestion));
     } catch (requestError) {
         error = requestError;
+    } finally {
+        suggestionPending = false;
+        if (button) button.disabled = false;
     }
     if (version !== authVersion ||
         document.getElementById("suggestionMessage") !== message) return;

@@ -161,6 +161,13 @@ async function copyProtocol(id) {
     }
 }
 
+// Shared by every section so auth/logout errors are never hidden.
+function authErrorHtml() {
+    if (!authError) return "";
+    return `<div class="message" role="alert">${escapeHtml(authError)}</div>
+        ${!logoutPending && !logoutFailed ? '<button onclick="startApp()">Bandyti dar kartą</button>' : ""}`;
+}
+
 function userAreaHtml() {
     let userArea;
     if (logoutPending || logoutFailed) {
@@ -201,8 +208,7 @@ function showProtocolList() {
 
     app.innerHTML = `
         <div class="topbar">${userArea}</div>
-        ${authError ? `<div class="message" role="alert">${escapeHtml(authError)}</div>
-            ${!logoutPending && !logoutFailed ? '<button onclick="startApp()">Bandyti dar kartą</button>' : ""}` : ""}
+        ${authErrorHtml()}
         ${adminArea}
         <nav class="sections" id="sectionNav"></nav>
         <input id="searchInput" class="search" type="text" placeholder="Ieškoti protokolo..." oninput="renderProtocols()">
