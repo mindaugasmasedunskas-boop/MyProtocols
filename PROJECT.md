@@ -23,6 +23,8 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | Failas | Atsakomybė |
 | --- | --- |
 | `index.html` | Karkasas, skriptų įkėlimo seka ir paleidimas. |
+| `manifest.webmanifest` | Įdiegiamos programos (PWA) aprašas: pavadinimas, spalvos, ikonos, atskiras langas. |
+| `icons/` | Programos ikonos: SVG šaltiniai ir iš jų sugeneruoti PNG (192, 512, maskable 512, Apple 180). |
 | `css/style.css` | Bendri, administravimo ir mobiliųjų ekranų stiliai. |
 | `js/config.js` | Vieša Supabase konfigūracija ir kliento inicializavimas. |
 | `js/utils.js` | HTML kodavimas ir klaidos teksto parinkimas. |
@@ -80,7 +82,7 @@ node --test tests/stage1.test.cjs
 ```
 
 Šiam rinkiniui pakanka Node.js, papildomų paketų nereikia. Esamo rinkinio
-31 testas praėjo (28 iš 1 etapo ir 3 greitųjų pataisymų). Tai imitaciniai,
+32 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA). Tai imitaciniai,
 ne tikro Supabase testai.
 
 ```powershell
