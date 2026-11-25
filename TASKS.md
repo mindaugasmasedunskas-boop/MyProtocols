@@ -6,6 +6,13 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Kontaktų skiltis (šaka `codex/contacts`): `js/contacts.js`, skyrių
+  meniu „Algoritmai / Kontaktai“, paieška, grupavimas pagal skyrių, saugios
+  `tel:` ir `mailto:` nuorodos. Patikra: 35 izoliuoti testai praėjo. Vietinėje
+  naršyklėje skiltis atsidaro; lentelės `contacts` Supabase dar nėra, todėl
+  rodoma klaida. [ ] Naudotojas turi paleisti suderintą `contacts` SQL.
+  Kontaktų redagavimas programoje neįgyvendintas (kol kas per Table Editor).
+
 - [x] 2026-11-25 Supabase metaduomenų auditas (skaitomosios užklausos,
   vykdė naudotojas; rezultatai Git nesaugomi). Nustatyta:
   - RLS įjungta `profiles`, `protocols`, `suggestions` (FORCE RLS išjungta);
