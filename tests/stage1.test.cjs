@@ -716,3 +716,15 @@ test('admin delete asks for confirmation before deleting', async () => {
     assert.deepEqual(h.calls.deletes[0].filters, [['id', 'p1']]);
     assert.equal(h.calls.alerts.length, 0);
 });
+
+test('algorithm categories follow the agreed order with "Kitos" last', async () => {
+    const rows = ['Kitos', 'Neurologija', 'Zeta grupė', 'Širdis ir kraujotaka', '', 'Kvėpavimas ir infekcinės ligos', 'Medžiagų apykaita ir inkstai']
+        .map((category, i) => ({ id: 'c' + i, title: 'A' + i, category, content: 'x', access_level: 'public' }));
+    const h = harness({ protocols: async () => ({ data: rows, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    const buttons = h.document.getElementById('categoryButtons').children.map(b => b.textContent);
+    assert.deepEqual(buttons, ['Visi', 'Širdis ir kraujotaka', 'Medžiagų apykaita ir inkstai', 'Kvėpavimas ir infekcinės ligos', 'Neurologija', 'Zeta grupė', 'Kitos']);
+    const listed = h.document.getElementById('protocolList').children.map(card => card.children[0].textContent);
+    assert.deepEqual(listed, ['Širdis ir kraujotaka', 'Medžiagų apykaita ir inkstai', 'Kvėpavimas ir infekcinės ligos', 'Neurologija', 'Zeta grupė', 'Kitos', '']);
+});

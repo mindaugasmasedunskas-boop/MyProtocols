@@ -6,6 +6,15 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] 2026-11-25 įkelta 21 terapinio priėmimo algoritmo juodraštis (SQL
+  vykdė naudotojas; failas `exports/` neįtraukiamas į Git). Pavadinimuose
+  žymė „[Juodraštis]“; turinys nepatvirtintas ligoninės. Algoritmo įrašymą
+  per programą naudotojas patvirtino su tikra admin paskyra.
+- [x] Fiksuota algoritmų kategorijų tvarka (šaka `codex/category-order`):
+  Širdis ir kraujotaka, Medžiagų apykaita ir inkstai, Kvėpavimas ir
+  infekcinės ligos, Neurologija, kitos naujos, „Kitos“ paskutinė. Patikra:
+  46 izoliuoti testai praėjo.
+
 - [x] Algoritmų administravimas programoje (šaka `codex/admin-protocols`):
   administratorius mato „+ Pridėti algoritmą“, o algoritmo peržiūroje
   „Redaguoti“ ir „Ištrinti“ (su patvirtinimu). Įrašymas tikrina grąžintas
