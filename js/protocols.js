@@ -17,6 +17,28 @@ function renderSectionNav() {
     nav.append(button);
 }
 
+// Fixed order of algorithm categories. Unknown categories come after these
+// (alphabetically), "Kitos" is always last, uncategorized rows at the very end.
+const CATEGORY_ORDER = [
+    "Širdis ir kraujotaka",
+    "Medžiagų apykaita ir inkstai",
+    "Kvėpavimas ir infekcinės ligos",
+    "Neurologija"
+];
+const LAST_CATEGORY = "Kitos";
+
+function categoryRank(category) {
+    if (!category) return 3;
+    if (category === LAST_CATEGORY) return 2;
+    return CATEGORY_ORDER.includes(category) ? 0 : 1;
+}
+
+function compareCategories(a, b) {
+    return categoryRank(a) - categoryRank(b) ||
+        (categoryRank(a) === 0 ? CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b) : 0) ||
+        String(a || "").localeCompare(String(b || ""), "lt");
+}
+
 function canReadProtocol(protocol) {
     // Individual auditor permissions are not implemented yet. Admin status
     // deliberately does not grant restricted access. Unknown levels are denied.
@@ -95,7 +117,8 @@ function renderProtocols() {
         const categoryMatch = currentCategory === "Visi" || protocol.category === currentCategory;
         const text = normalizeSearchText(`${protocol.title || ""} ${protocol.category || ""} ${protocol.content || ""}`);
         return categoryMatch && (!search || text.includes(search));
-    });
+    }).sort((a, b) => compareCategories(a.category, b.category) ||
+        String(a.title || "").localeCompare(String(b.title || ""), "lt"));
 
     list.replaceChildren();
     if (!filtered.length) {
@@ -211,7 +234,8 @@ function showProtocolList() {
         return;
     }
     const app = document.getElementById("app");
-    const categories = ["Visi", ...new Set(protocols.filter(canReadProtocol).map(p => p.category).filter(Boolean))];
+    const categories = ["Visi", ...[...new Set(protocols.filter(canReadProtocol).map(p => p.category).filter(Boolean))]
+        .sort(compareCategories)];
     if (!categories.includes(currentCategory)) currentCategory = "Visi";
     const userArea = userAreaHtml();
 

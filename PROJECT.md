@@ -87,7 +87,7 @@ node --test tests/stage1.test.cjs
 ```
 
 Šiam rinkiniui pakanka Node.js, papildomų paketų nereikia. Esamo rinkinio
-45 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo). Tai imitaciniai,
+46 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos). Tai imitaciniai,
 ne tikro Supabase testai.
 
 ```powershell
