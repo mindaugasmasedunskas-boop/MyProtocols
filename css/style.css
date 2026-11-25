@@ -297,3 +297,50 @@
                 justify-content: flex-start;
             }
         }
+
+/* Pagrindinių skyrių meniu ir kontaktai */
+.sections {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.section-button.active {
+    background: #587386;
+    color: white;
+    border-color: #587386;
+}
+
+#contactList {
+    margin-top: 22px;
+}
+
+.contact-group {
+    color: #587386;
+    margin: 26px 0 12px;
+}
+
+.contact {
+    background: white;
+    border-radius: 13px;
+    padding: 18px 24px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+}
+
+.contact strong {
+    font-size: 20px;
+}
+
+.contact-link {
+    display: block;
+    margin-top: 6px;
+    font-size: 18px;
+    color: #2f5f80;
+}
+
+.contact-note {
+    margin-top: 6px;
+    color: #666;
+}

@@ -3,6 +3,25 @@ let currentCategory = "Visi";
 let protocolRequestVersion = 0;
 let protocolsLoading = false;
 let protocolsError = "";
+// Which main section the list view shows: "protocols" or "contacts".
+let currentSection = "protocols";
+
+const SECTIONS = [
+    ["protocols", "Algoritmai", () => { currentSection = "protocols"; showProtocolList(); }],
+    ["contacts", "Kontaktai", () => showContacts()]
+];
+
+function renderSectionNav() {
+    const nav = document.getElementById("sectionNav");
+    if (!nav) return;
+    for (const [key, label, open] of SECTIONS) {
+        const button = document.createElement("button");
+        button.className = "section-button" + (key === currentSection ? " active" : "");
+        button.textContent = label;
+        button.addEventListener("click", open);
+        nav.append(button);
+    }
+}
 
 function canReadProtocol(protocol) {
     // Individual auditor permissions are not implemented yet. Admin status
@@ -142,11 +161,7 @@ async function copyProtocol(id) {
     }
 }
 
-function showProtocolList() {
-    const app = document.getElementById("app");
-    const categories = ["Visi", ...new Set(protocols.filter(canReadProtocol).map(p => p.category).filter(Boolean))];
-    if (!categories.includes(currentCategory)) currentCategory = "Visi";
-
+function userAreaHtml() {
     let userArea;
     if (logoutPending || logoutFailed) {
         userArea = `<button onclick="logout()" ${logoutPending ? "disabled" : ""}>
@@ -160,6 +175,19 @@ function showProtocolList() {
     } else {
         userArea = `<button onclick="showLogin()" ${authLoading ? "disabled" : ""}>Prisijungti</button>`;
     }
+    return userArea;
+}
+
+function showProtocolList() {
+    // Auth refreshes call this; keep the user in the section they opened.
+    if (currentSection === "contacts" && typeof showContacts === "function") {
+        showContacts();
+        return;
+    }
+    const app = document.getElementById("app");
+    const categories = ["Visi", ...new Set(protocols.filter(canReadProtocol).map(p => p.category).filter(Boolean))];
+    if (!categories.includes(currentCategory)) currentCategory = "Visi";
+    const userArea = userAreaHtml();
 
     const adminArea = isAdmin() ? `
         <div class="admin-box">
@@ -176,11 +204,13 @@ function showProtocolList() {
         ${authError ? `<div class="message" role="alert">${escapeHtml(authError)}</div>
             ${!logoutPending && !logoutFailed ? '<button onclick="startApp()">Bandyti dar kartą</button>' : ""}` : ""}
         ${adminArea}
+        <nav class="sections" id="sectionNav"></nav>
         <input id="searchInput" class="search" type="text" placeholder="Ieškoti protokolo..." oninput="renderProtocols()">
         <div class="categories" id="categoryButtons"></div>
         <div id="protocolList"></div>
     `;
 
+    renderSectionNav();
     const categoryButtons = document.getElementById("categoryButtons");
     for (const category of categories) {
         const button = document.createElement("button");

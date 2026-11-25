@@ -98,6 +98,7 @@ function harness(options = {}) {
                 order() {
                     calls.reads.push(query);
                     if (table === 'protocols') return options.protocols?.(query) || Promise.resolve({ data: [publicProtocol], error: null });
+                    if (table === 'contacts') return options.contacts?.(query) || Promise.resolve({ data: [], error: null });
                     return options.suggestions?.(query) || Promise.resolve({ data: [], error: null });
                 },
                 maybeSingle() {
@@ -117,7 +118,7 @@ function harness(options = {}) {
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
-    for (const file of ['utils', 'auth', 'protocols', 'admin', 'admin-protocols', 'suggestions']) {
+    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'admin', 'admin-protocols', 'suggestions']) {
         vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'js', file + '.js'), 'utf8'), context, { filename: file + '.js' });
     }
     const run = code => vm.runInContext(code, context);
@@ -525,4 +526,42 @@ test('app is installable: manifest is linked and its icons exist', () => {
         assert.equal(png.readUInt32BE(16), w, icon.src + ' width');
         assert.equal(png.readUInt32BE(20), h, icon.src + ' height');
     }
+});
+
+const sampleContacts = [
+    { id: 2, department: 'Registratūra', name: 'Ona', job_title: 'Registratorė', phone: '+370 600 00002', email: 'ona@example.test', note: '', sort_order: 1 },
+    { id: 1, department: 'Administracija', name: '<img src=x onerror=alert(1)>', job_title: '', phone: 'javascript:alert(1)', email: 'x@y" onclick="z', note: 'Pastaba', sort_order: 0 }
+];
+
+test('contacts load for a guest, are grouped by department and searchable', async () => {
+    const h = harness({ contacts: async () => ({ data: sampleContacts, error: null }) });
+    await h.run('startApp()');
+    await h.run('showContacts()');
+    assert.ok(h.calls.reads.some(q => q.table === 'contacts'));
+    const list = h.document.getElementById('contactList');
+    const groups = list.children.filter(el => el.className === 'contact-group').map(el => el.textContent);
+    assert.deepEqual(groups, ['Administracija', 'Registratūra']);
+    h.document.getElementById('contactSearch').value = 'REGISTRATURA';
+    h.run('renderContacts()');
+    assert.deepEqual(list.children.filter(el => el.className === 'contact').map(el => el.children[0].textContent), ['Ona']);
+});
+
+test('contact links accept only safe tel/mailto values and text is not parsed as HTML', async () => {
+    const h = harness({ contacts: async () => ({ data: sampleContacts, error: null }) });
+    await h.run('startApp()');
+    await h.run('showContacts()');
+    const links = h.document.getElementById('contactList').all().filter(el => el.className === 'contact-link');
+    const hrefs = links.map(el => el.getAttribute('href')).filter(Boolean);
+    assert.deepEqual(hrefs.sort(), ['mailto:ona@example.test', 'tel:+37060000002']);
+    assert.equal(h.document.getElementById('contactList').all().some(el => el.tagName === 'img'), false);
+});
+
+test('auth refresh keeps the user in the contacts section', async () => {
+    const h = harness({ contacts: async () => ({ data: sampleContacts, error: null }) });
+    await h.run('startApp()');
+    await h.run('showContacts()');
+    h.emit('TOKEN_REFRESHED', null);
+    await h.settle();
+    assert.ok(h.document.getElementById('contactList'));
+    assert.equal(h.document.getElementById('protocolList'), null);
 });

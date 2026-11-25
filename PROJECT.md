@@ -32,6 +32,7 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | `js/utils.js` | HTML kodavimas ir klaidos teksto parinkimas. |
 | `js/auth.js` | Sesija, prisijungimas, atsijungimas, profilis, admin patikra. |
 | `js/protocols.js` | Užklausa, vieša prieiga, kategorijos, paieška, peržiūra, kopijavimas. |
+| `js/contacts.js` | Vieša kontaktų knyga: užklausa, paieška, grupavimas, `tel:`/`mailto:` nuorodos. |
 | `js/suggestions.js` | Prisijungusio naudotojo pasiūlymo forma ir siuntimas. |
 | `js/admin.js` | Pasiūlymų sąrašas, būsenos ir administratoriaus komentarai. |
 | `js/admin-protocols.js` | Neprijungta `changeProtocolAccess()` funkcija. |
@@ -69,6 +70,7 @@ Tikroji lentelių struktūra ir Dashboard Exposed schemas dar nepatikrintos.
 | --- | --- |
 | `protocols` | SELECT `id,title,category,content,access_level`, filtras `access_level = public`, rūšiavimas pagal `title`. Neprijungta admin funkcija numato UPDATE `access_level` pagal `id`. |
 | `profiles` | SELECT `id,role` pagal prisijungusio naudotojo ID. Klientas profilių nekuria ir nekeičia. |
+| `contacts` | SELECT `id,department,name,job_title,phone,email,note,sort_order`, rūšiavimas `sort_order`. Vieša (anon) skaitymo lentelė; keisti gali tik admin. |
 | `suggestions` | INSERT `title,content,status,user_id,email`; admin SELECT visų stulpelių pagal `created_at`; UPDATE `status,admin_comment,updated_at` pagal `id`. |
 
 Kode naudojami laukai neįrodo jų tipų, apribojimų ar serverio privilegijų.
