@@ -68,7 +68,7 @@ function harness(options = {}) {
         getElementById: id => app.all().find(el => el.getAttribute('id') === id) || null,
         createElement: tag => new Element(tag)
     };
-    const calls = { reads: [], copied: [], alerts: [], subscriptions: 0, inserts: [], updates: [] };
+    const calls = { reads: [], copied: [], alerts: [], subscriptions: 0, inserts: [], updates: [], deletes: [] };
     let listener;
     const emit = (event, value) => listener?.(event, value);
     const client = {
@@ -89,6 +89,11 @@ function harness(options = {}) {
                 select(columns) { query.columns = columns; return builder; },
                 eq(key, value) {
                     query.filters.push([key, value]);
+                    if (query.delete) {
+                        calls.deletes.push(query);
+                        const result = options.delete?.(query) || Promise.resolve({ data: [{ id: value }], error: null });
+                        return Object.assign(result, { select: () => result });
+                    }
                     if (query.update) {
                         calls.updates.push(query);
                         const result = options.update?.(query) || Promise.resolve({ data: [{ id: value }], error: null });
@@ -106,7 +111,12 @@ function harness(options = {}) {
                     calls.reads.push(query);
                     return options.profile?.(query) || Promise.resolve({ data: { id: user.id, role: 'user' }, error: null });
                 },
-                insert(value) { calls.inserts.push(value); return options.insert?.(value) || Promise.resolve({ error: null }); },
+                insert(value) {
+                    calls.inserts.push({ table, ...value });
+                    const result = options.insert?.(value) || Promise.resolve({ data: [{ id: 'new1' }], error: null });
+                    return Object.assign(result, { select: () => result });
+                },
+                delete() { query.delete = true; return builder; },
                 update(value) { query.update = value; return builder; }
             };
             return builder;
@@ -116,6 +126,7 @@ function harness(options = {}) {
         document, console, setTimeout, clearTimeout,
         navigator: { clipboard: { writeText: async value => { calls.copied.push(value); } } },
         alert: value => calls.alerts.push(value),
+        confirm: () => options.confirm ?? true,
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
@@ -643,4 +654,65 @@ test('auth refresh keeps the user on the home screen', async () => {
     await h.settle();
     assert.ok(h.document.getElementById('homeGrid'));
     assert.equal(h.document.getElementById('protocolList'), null);
+});
+
+const adminProfile = async () => ({ data: { id: user.id, role: 'admin' }, error: null });
+
+test('only admin sees add, edit and delete controls for algorithms', async () => {
+    const plain = harness({ session });
+    await plain.run('startApp()');
+    await plain.settle();
+    assert.doesNotMatch(plain.app.innerHTML + plain.document.getElementById('sectionNav').children.map(b => b.textContent).join(), /Pridėti algoritmą/);
+    plain.run('showProtocol("p1")');
+    assert.equal(plain.document.getElementById('editProtocolButton'), null);
+
+    const admin = harness({ session, profile: adminProfile });
+    await admin.run('startApp()');
+    await admin.settle();
+    assert.ok(admin.document.getElementById('sectionNav').children.some(b => b.textContent === '+ Pridėti algoritmą'));
+    admin.run('showProtocol("p1")');
+    assert.ok(admin.document.getElementById('editProtocolButton'));
+    assert.ok(admin.document.getElementById('deleteProtocolButton'));
+});
+
+test('admin adds an algorithm as public and the form validates required fields', async () => {
+    const h = harness({ session, profile: adminProfile });
+    await h.run('startApp()');
+    await h.settle();
+    h.run('showProtocolForm()');
+    await h.document.getElementById('protocolForm').dispatch('submit');
+    assert.equal(h.calls.inserts.length, 0);
+    assert.match(h.document.getElementById('protocolFormMessage').textContent, /pavadinimą/);
+    h.document.getElementById('protocolTitle').value = 'Naujas';
+    h.document.getElementById('protocolCategory').value = 'Grupė';
+    h.document.getElementById('protocolContent').value = 'Tekstas';
+    await h.document.getElementById('protocolForm').dispatch('submit');
+    assert.deepEqual(h.calls.inserts[0], { table: 'protocols', title: 'Naujas', category: 'Grupė', content: 'Tekstas', access_level: 'public' });
+});
+
+test('admin edit that changes no rows shows an error, not success', async () => {
+    const h = harness({ session, profile: adminProfile, update: async () => ({ data: [], error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    h.run('showProtocolForm("p1")');
+    assert.equal(h.document.getElementById('protocolTitle').value, publicProtocol.title);
+    await h.document.getElementById('protocolForm').dispatch('submit');
+    assert.equal(h.calls.updates[0].update.title, publicProtocol.title);
+    assert.match(h.document.getElementById('protocolFormMessage').textContent, /Nepavyko išsaugoti/);
+});
+
+test('admin delete asks for confirmation before deleting', async () => {
+    const cancelled = harness({ session, profile: adminProfile, confirm: false });
+    await cancelled.run('startApp()');
+    await cancelled.settle();
+    await cancelled.run('deleteProtocol("p1")');
+    assert.equal(cancelled.calls.deletes.length, 0);
+
+    const h = harness({ session, profile: adminProfile });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('deleteProtocol("p1")');
+    assert.equal(h.calls.deletes.length, 1);
+    assert.deepEqual(h.calls.deletes[0].filters, [['id', 'p1']]);
+    assert.equal(h.calls.alerts.length, 0);
 });

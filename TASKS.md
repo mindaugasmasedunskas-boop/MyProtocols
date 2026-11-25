@@ -6,6 +6,14 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Algoritmų administravimas programoje (šaka `codex/admin-protocols`):
+  administratorius mato „+ Pridėti algoritmą“, o algoritmo peržiūroje
+  „Redaguoti“ ir „Ištrinti“ (su patvirtinimu). Įrašymas tikrina grąžintas
+  eilutes. Nauji įrašai visada `public`. Serverio apsauga: esamos
+  `protocols_admin_*` RLS politikos. Patikra: 45 izoliuoti testai praėjo;
+  formos vietinėje naršyklėje patikrintos su imituota admin būsena. Su tikra
+  admin paskyra nebandyta.
+
 - [x] Pagrindinis ekranas (šaka `codex/home-screen`): `js/home.js`, dideli
   skilčių mygtukai (Algoritmai, Skubios pagalbos kodai, Skaičiuoklės,
   Statistikos pildymas, Kontaktai, Pasiūlymai, Dokumentai). Pasiūlymai ir
