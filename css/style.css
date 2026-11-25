@@ -404,3 +404,41 @@
     background: #fdf0d5;
     color: #7a5310;
 }
+
+
+/* Kompaktiškas algoritmų sąrašas: kelios kortelės eilėje, pavadinimas iki 2 eilučių */
+#protocolList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+#protocolList > :not(.protocol) {
+    grid-column: 1 / -1;
+}
+
+#protocolList .protocol {
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #e1e6ea;
+    box-shadow: none;
+}
+
+#protocolList .protocol:hover {
+    border-color: #587386;
+}
+
+#protocolList .protocol .category {
+    font-size: 12px;
+}
+
+#protocolList .protocol h2 {
+    margin: 3px 0 0;
+    font-size: 16px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
