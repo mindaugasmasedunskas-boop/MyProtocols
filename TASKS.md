@@ -6,6 +6,27 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Pagrindinis ekranas (šaka `codex/home-screen`): `js/home.js`, dideli
+  skilčių mygtukai (Algoritmai, Skubios pagalbos kodai, Skaičiuoklės,
+  Statistikos pildymas, Kontaktai, Pasiūlymai, Dokumentai). Pasiūlymai ir
+  Dokumentai pažymėti „Reikia prisijungti“; dar nesukurtos skiltys rodo
+  „Ruošiama“. Kiekviena skiltis turi mygtuką „← Pradžia“. Programa kol kas
+  skirta kompiuteriams. Patikra: 41 izoliuotas testas praėjo; vietinėje
+  naršyklėje ekranas ir perėjimai patikrinti.
+
+## Pilotas (VMKL ligoninė): naudotojo išvardyti poreikiai
+
+1. Patvirtinti algoritmai tam tikrų susirgimų atvejais.
+2. Statistikos pildymo pavyzdžiai įvairiais variantais.
+3. Skubios pagalbos kodai, pritaikyti priėmimo skyriui.
+4. Pagrindiniai kontaktai.
+5. Skaičiuoklės (pvz., kreatinino klirensas).
+6. Pasiūlymai darbui gerinti.
+7. Pasirašymų ir informavimo sistema („Susipažinau“, priminimai).
+
+Prieš suvedant tikrus darbuotojų duomenis reikia suderinimo su ligoninės
+duomenų apsaugos pareigūnu ir IT skyriumi. Pacientų duomenų programoje nėra.
+
 - [x] Codex audito P2 pataisymai (šaka `codex/audit-fixes`): kontaktų
   skiltyje rodomos autentifikacijos ir atsijungimo klaidos; administratoriaus
   išsaugojimas tikrina pakeistas eilutes (`.select("id")`) ir nerodo
