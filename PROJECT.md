@@ -36,7 +36,7 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | `js/contacts.js` | Vieša kontaktų knyga: užklausa, paieška, grupavimas, `tel:`/`mailto:` nuorodos. |
 | `js/suggestions.js` | Prisijungusio naudotojo pasiūlymo forma ir siuntimas. |
 | `js/admin.js` | Pasiūlymų sąrašas, būsenos ir administratoriaus komentarai. |
-| `js/admin-protocols.js` | Neprijungta `changeProtocolAccess()` funkcija. |
+| `js/admin-protocols.js` | Administratoriaus algoritmų pridėjimas, redagavimas ir trynimas (nauji įrašai visada `public`). |
 | `tests/stage1.test.cjs` | Izoliuoti Node.js testai su DOM ir Supabase imitacijomis. |
 | `tests/stage1.browser.cjs` | Tikros Edge naršyklės testas su imitaciniu SDK. |
 
@@ -87,7 +87,7 @@ node --test tests/stage1.test.cjs
 ```
 
 Šiam rinkiniui pakanka Node.js, papildomų paketų nereikia. Esamo rinkinio
-41 testas praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano). Tai imitaciniai,
+45 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo). Tai imitaciniai,
 ne tikro Supabase testai.
 
 ```powershell
@@ -115,7 +115,7 @@ scenarijų grupės. Produkcinės integracijos rezultatai iš to neišplaukia.
 ## Žinomi apribojimai
 
 - Neužbaigtas serverio prieigos auditas ir nepriklausoma auditoriaus teisė.
-- `admin-protocols.js` įkeliamas, bet neturi sąsajos iškvietimo.
+- Administratorius negali keisti algoritmo prieigos lygio (`restricted` niekam nematomas, kol nėra auditoriaus teisės).
 - Administravimo UPDATE nepatvirtina faktiškai pakeistos eilutės.
 - Pasiūlymų siuntimas neturi lygiagrečių paspaudimų/dubliavimo kontrolės;
   nėra pasiūlymo autoriaus atsakymų peržiūros.

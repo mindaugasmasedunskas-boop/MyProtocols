@@ -134,6 +134,8 @@ function showProtocol(id) {
         <div class="detail-buttons">
             <button onclick="showProtocolList()">← Grįžti</button>
             <button id="copyProtocolButton" class="primary">Kopijuoti tekstą</button>
+            ${isAdmin() ? `<button id="editProtocolButton">Redaguoti</button>
+            <button id="deleteProtocolButton" class="danger">Ištrinti</button>` : ""}
         </div>
         <div class="detail">
             <div class="category">${escapeHtml(protocol.category || "")}</div>
@@ -142,6 +144,8 @@ function showProtocol(id) {
         </div>
     `;
     document.getElementById("copyProtocolButton").addEventListener("click", () => copyProtocol(protocol.id));
+    document.getElementById("editProtocolButton")?.addEventListener("click", () => showProtocolForm(protocol.id));
+    document.getElementById("deleteProtocolButton")?.addEventListener("click", () => deleteProtocol(protocol.id));
 }
 
 async function copyProtocol(id) {
@@ -221,6 +225,13 @@ function showProtocolList() {
     `;
 
     renderSectionNav();
+    if (isAdmin()) {
+        const add = document.createElement("button");
+        add.className = "primary";
+        add.textContent = "+ Pridėti algoritmą";
+        add.addEventListener("click", () => showProtocolForm());
+        document.getElementById("sectionNav").append(add);
+    }
     const categoryButtons = document.getElementById("categoryButtons");
     for (const category of categories) {
         const button = document.createElement("button");
