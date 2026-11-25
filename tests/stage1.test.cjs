@@ -464,3 +464,46 @@ test('missing CDN library results in a visible initialization error', async () =
     assert.equal(vm.runInContext('supabaseClient', configContext), null);
     assert.match(vm.runInContext('supabaseInitializationError', configContext), /Nepavyko įkelti/);
 });
+
+test('login form submit (Enter key) signs in without reloading the page', async () => {
+    let signIns = 0;
+    const h = harness({ signIn: async () => { signIns++; return { data: { user, session }, error: null }; } });
+    await h.run('startApp()');
+    h.run('showLogin()');
+    h.document.getElementById('email').value = user.email;
+    h.document.getElementById('password').value = 'test-only';
+    let prevented = false;
+    await h.document.getElementById('loginForm').dispatch('submit', { preventDefault() { prevented = true; } });
+    await h.settle();
+    assert.equal(prevented, true);
+    assert.equal(signIns, 1);
+    assert.equal(h.run('currentUser?.id'), user.id);
+});
+
+test('search ignores Lithuanian diacritics and letter case', async () => {
+    const h = harness({ protocols: async () => ({ data: [
+        { ...publicProtocol, id: 'a', title: 'Šoko gydymas', content: 'Skysčių įvedimas' },
+        { ...publicProtocol, id: 'b', title: 'Kitas', content: 'Nieko bendro' }
+    ], error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    const titles = query => {
+        h.document.getElementById('searchInput').value = query;
+        h.run('renderProtocols()');
+        return h.document.getElementById('protocolList').children
+            .filter(card => card.className === 'protocol')
+            .map(card => card.children[1].textContent);
+    };
+    assert.deepEqual(titles('soko'), ['Šoko gydymas']);
+    assert.deepEqual(titles('SKYSCIU IVEDIMAS'), ['Šoko gydymas']);
+    assert.deepEqual(titles('šoko'), ['Šoko gydymas']);
+    assert.deepEqual(titles('zzz'), []);
+});
+
+test('index.html pins the Supabase SDK to an exact version with SRI', () => {
+    const html = fs.readFileSync(path.join(sourceRoot, 'index.html'), 'utf8');
+    const tag = html.match(/<script[^>]+supabase-js[^>]*>/s)?.[0] || '';
+    assert.match(tag, /supabase-js@\d+\.\d+\.\d+\//);
+    assert.match(tag, /integrity="sha384-[A-Za-z0-9+/=]{64}"/);
+    assert.match(tag, /crossorigin="anonymous"/);
+});

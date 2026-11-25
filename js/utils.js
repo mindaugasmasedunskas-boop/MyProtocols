@@ -20,3 +20,16 @@ function errorText(error) {
         ? error.message
         : "Netikėta klaida. Patikrinkite ryšį ir bandykite dar kartą.";
 }
+
+
+// =====================================================
+// SEARCH
+// =====================================================
+
+// Lowercase and drop diacritics so "siulymas" matches "siūlymas".
+function normalizeSearchText(value) {
+    return String(value)
+        .normalize("NFD")
+        .replace(/\p{M}/gu, "")
+        .toLowerCase();
+}
