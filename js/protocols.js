@@ -76,11 +76,11 @@ function renderProtocols() {
         return;
     }
 
-    const search = document.getElementById("searchInput")?.value.trim().toLowerCase() || "";
+    const search = normalizeSearchText(document.getElementById("searchInput")?.value.trim() || "");
     const filtered = protocols.filter(protocol => {
         if (!canReadProtocol(protocol)) return false;
         const categoryMatch = currentCategory === "Visi" || protocol.category === currentCategory;
-        const text = `${protocol.title || ""} ${protocol.category || ""} ${protocol.content || ""}`.toLowerCase();
+        const text = normalizeSearchText(`${protocol.title || ""} ${protocol.category || ""} ${protocol.content || ""}`);
         return categoryMatch && (!search || text.includes(search));
     });
 

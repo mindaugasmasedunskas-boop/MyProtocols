@@ -13,15 +13,20 @@ function showLogin() {
     if (logoutPending || logoutFailed) return;
 
     document.getElementById("app").innerHTML = `
-        <div class="login-box">
+        <form id="loginForm" class="login-box" novalidate>
             <h2>Prisijungimas</h2>
             <input id="email" type="email" placeholder="El. paštas" autocomplete="username">
             <input id="password" type="password" placeholder="Slaptažodis" autocomplete="current-password">
-            <button id="loginButton" class="primary" onclick="login()">Prisijungti</button>
-            <button onclick="showProtocolList()">Atšaukti</button>
+            <button id="loginButton" type="submit" class="primary">Prisijungti</button>
+            <button type="button" onclick="showProtocolList()">Atšaukti</button>
             <div id="loginMessage" class="message" role="alert"></div>
-        </div>
+        </form>
     `;
+    // A form lets Enter submit from either field; never reload the page.
+    document.getElementById("loginForm").addEventListener("submit", event => {
+        event.preventDefault();
+        login();
+    });
 }
 
 async function login() {

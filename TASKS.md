@@ -6,6 +6,12 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Greitieji pataisymai (šaka `codex/quick-fixes`): prisijungimas veikia
+  paspaudus Enter (forma su `submit`), antraštė be žodžio „Klinikiniai“,
+  Supabase SDK užfiksuotas `2.119.0` su SRI, paieška nejautri lietuviškoms
+  raidėms ir didžiosioms raidėms. Patikra: 31 izoliuotas testas praėjo;
+  Edge naršyklės testas nepaleistas, nes Playwright šiame kompiuteryje nerastas.
+
 - [x] Šioje darbo šakoje naudotojui matomas pavadinimas pakeistas iš
   MedProtocols į MyProtocols: `index.html` kortelės pavadinime ir antraštėje.
   Katalogo, saugyklos ir Supabase objektų pavadinimai nekeičiami.
@@ -95,8 +101,7 @@ galima įtraukti tik peržiūrėtas, paslapčių neturinčias išvadas ar migrac
   valdymą, nesuteikiant admin automatinio restricted turinio skaitymo.
 - [ ] Patvirtinti paveiktą eilutę administravimo atnaujinimuose.
 - [ ] Sutvarkyti pasiūlymų dubliavimą ir prireikus autoriaus atsakymų peržiūrą.
-- [ ] Įvertinti puslapiavimą, paieškos būsenos išsaugojimą, prieinamumą ir
-  tikslios Supabase CDN versijos fiksavimą.
+- [ ] Įvertinti puslapiavimą, paieškos būsenos išsaugojimą ir prieinamumą.
 - [ ] Pagal poreikį parengti CI ir dokumentuotą diegimo procesą.
 
 ## Dabartinis dokumentacijos pakeitimų rinkinys

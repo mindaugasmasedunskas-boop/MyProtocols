@@ -10,8 +10,9 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 
 - Statinė lietuviška vieno puslapio programa: HTML, CSS ir įprastas
   JavaScript. Nėra karkaso, bundlerio, build etapo ar `package.json`.
-- Supabase JavaScript v2 biblioteka gaunama iš jsDelivr, nurodant `@2`.
-  Tiksli bibliotekos versija neužfiksuota.
+- Supabase JavaScript biblioteka gaunama iš jsDelivr, užfiksuota versija
+  `2.119.0` (`dist/umd/supabase.js`) su SRI `integrity` maiša. Atnaujinant
+  versiją būtina kartu perskaičiuoti ir pakeisti `integrity` reikšmę.
 - `index.html` pateikia `#app`, įkelia stilius ir JS failus, tada kviečia
   `startApp()`. Paleidimui naudok įprastą statinį HTTP serverį; diegimo
   aplinka ir produkcinis adresas šiame projekte neaprašyti.
@@ -79,7 +80,8 @@ node --test tests/stage1.test.cjs
 ```
 
 Šiam rinkiniui pakanka Node.js, papildomų paketų nereikia. Esamo rinkinio
-28 testai praėjo 1 etapo patikrose. Tai imitaciniai, ne tikro Supabase testai.
+31 testas praėjo (28 iš 1 etapo ir 3 greitųjų pataisymų). Tai imitaciniai,
+ne tikro Supabase testai.
 
 ```powershell
 node tests/stage1.browser.cjs
