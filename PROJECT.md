@@ -14,8 +14,10 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
   `2.119.0` (`dist/umd/supabase.js`) su SRI `integrity` maiša. Atnaujinant
   versiją būtina kartu perskaičiuoti ir pakeisti `integrity` reikšmę.
 - `index.html` pateikia `#app`, įkelia stilius ir JS failus, tada kviečia
-  `startApp()`. Paleidimui naudok įprastą statinį HTTP serverį; diegimo
-  aplinka ir produkcinis adresas šiame projekte neaprašyti.
+  `startApp()`. Vietiniam paleidimui naudok įprastą statinį HTTP serverį.
+- Produkcinis adresas: GitHub Pages iš šakos `codex/stage1-auth-security`,
+  šaknies aplanko: https://mindaugasmasedunskas-boop.github.io/MyProtocols/
+  Kiekvienas push į šią šaką automatiškai atnaujina svetainę.
 - Kopijavimas priklauso nuo naršyklės Clipboard API ir jos suteiktų teisių.
 
 ## Failai ir ryšiai
@@ -97,7 +99,7 @@ scenarijų grupės. Produkcinės integracijos rezultatai iš to neišplaukia.
 
 ## Git ir GitHub
 
-- Privati saugykla: https://github.com/mindaugasmasedunskas-boop/MyProtocols
+- Vieša saugykla (nuo 2026-11-25): https://github.com/mindaugasmasedunskas-boop/MyProtocols
 - `origin` naudoja tos saugyklos HTTPS adresą.
 - Pradinė versija: `b6aea14`; 1 etapo pataisymai: `6982521`.
 - Šio aprašo rengimo metu GitHub numatytoji šaka yra
