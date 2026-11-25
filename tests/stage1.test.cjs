@@ -507,3 +507,22 @@ test('index.html pins the Supabase SDK to an exact version with SRI', () => {
     assert.match(tag, /integrity="sha384-[A-Za-z0-9+/=]{64}"/);
     assert.match(tag, /crossorigin="anonymous"/);
 });
+
+test('app is installable: manifest is linked and its icons exist', () => {
+    const html = fs.readFileSync(path.join(sourceRoot, 'index.html'), 'utf8');
+    assert.match(html, /<link rel="manifest" href="manifest\.webmanifest">/);
+    const manifest = JSON.parse(fs.readFileSync(path.join(sourceRoot, 'manifest.webmanifest'), 'utf8'));
+    assert.equal(manifest.display, 'standalone');
+    assert.equal(manifest.start_url, './');
+    const sizes = manifest.icons.map(icon => icon.sizes);
+    assert.ok(sizes.includes('192x192') && sizes.includes('512x512'));
+    assert.ok(manifest.icons.some(icon => icon.purpose === 'maskable'));
+    for (const icon of manifest.icons) {
+        const file = path.join(sourceRoot, icon.src);
+        assert.ok(fs.existsSync(file), icon.src + ' missing');
+        const png = fs.readFileSync(file);
+        const [w, h] = icon.sizes.split('x').map(Number);
+        assert.equal(png.readUInt32BE(16), w, icon.src + ' width');
+        assert.equal(png.readUInt32BE(20), h, icon.src + ' height');
+    }
+});

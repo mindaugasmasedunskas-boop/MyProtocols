@@ -6,6 +6,12 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Įdiegiama programa (šaka `codex/pwa-install`): `manifest.webmanifest`,
+  ikonos `icons/`, nuorodos `index.html`. Patikra: 32 izoliuoti testai praėjo;
+  vietinėje naršyklėje manifestas ir ikonos užsikrauna. Įdiegimas į darbalaukį
+  galimas tik paskelbus programą HTTPS adresu; paskelbimo vieta dar nesuderinta.
+  Service worker ir veikimas be interneto neįgyvendinti.
+
 - [x] Greitieji pataisymai (šaka `codex/quick-fixes`): prisijungimas veikia
   paspaudus Enter (forma su `submit`), antraštė be žodžio „Klinikiniai“,
   Supabase SDK užfiksuotas `2.119.0` su SRI, paieška nejautri lietuviškoms
