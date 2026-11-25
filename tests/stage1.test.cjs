@@ -119,9 +119,11 @@ function harness(options = {}) {
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
-    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'admin', 'admin-protocols', 'suggestions']) {
+    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'home', 'admin', 'admin-protocols', 'suggestions']) {
         vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'js', file + '.js'), 'utf8'), context, { filename: file + '.js' });
     }
+    // Most tests exercise the protocol list; home-screen tests set this back.
+    if (!options.home) vm.runInContext('currentSection = "protocols"', context);
     const run = code => vm.runInContext(code, context);
     const settle = async () => {
         for (let i = 0; i < 4; i++) {
@@ -605,4 +607,40 @@ test('double click on suggestion submit sends only one insert', async () => {
     pending.resolve({ error: null });
     await Promise.all([first, second]);
     assert.equal(h.calls.inserts.length, 1);
+});
+
+test('home screen shows section tiles and locks login-only sections for guests', async () => {
+    const h = harness({ home: true });
+    await h.run('startApp()');
+    await h.settle();
+    const tiles = h.document.getElementById('homeGrid').children;
+    assert.equal(tiles.length, 7);
+    const locked = tiles.filter(tile => tile.className.includes('locked')).map(tile => tile.getAttribute('data-section'));
+    assert.deepEqual(locked, ['suggestions', 'documents']);
+});
+
+test('home tiles open sections and the back button returns home', async () => {
+    const h = harness({ home: true, contacts: async () => ({ data: [], error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    const tile = key => h.document.getElementById('homeGrid').children.find(el => el.getAttribute('data-section') === key);
+    await tile('codes').dispatch('click');
+    assert.equal(h.document.getElementById('comingSoonTitle').textContent, 'Skubios pagalbos kodai');
+    await h.document.getElementById('sectionNav').children[0].dispatch('click');
+    assert.ok(h.document.getElementById('homeGrid'));
+    await tile('protocols').dispatch('click');
+    assert.ok(h.document.getElementById('protocolList'));
+    await h.document.getElementById('sectionNav').children[0].dispatch('click');
+    await tile('contacts').dispatch('click');
+    assert.ok(h.document.getElementById('contactList'));
+});
+
+test('auth refresh keeps the user on the home screen', async () => {
+    const h = harness({ home: true });
+    await h.run('startApp()');
+    await h.settle();
+    h.emit('TOKEN_REFRESHED', session);
+    await h.settle();
+    assert.ok(h.document.getElementById('homeGrid'));
+    assert.equal(h.document.getElementById('protocolList'), null);
 });

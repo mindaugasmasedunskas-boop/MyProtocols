@@ -3,24 +3,18 @@ let currentCategory = "Visi";
 let protocolRequestVersion = 0;
 let protocolsLoading = false;
 let protocolsError = "";
-// Which main section the list view shows: "protocols" or "contacts".
-let currentSection = "protocols";
+// Which main view is open: "home" (tiles), "protocols", "contacts" or a
+// section that is not built yet (see COMING_SOON in home.js).
+let currentSection = "home";
 
-const SECTIONS = [
-    ["protocols", "Algoritmai", () => { currentSection = "protocols"; showProtocolList(); }],
-    ["contacts", "Kontaktai", () => showContacts()]
-];
-
+// Every section view starts with a way back to the home screen.
 function renderSectionNav() {
     const nav = document.getElementById("sectionNav");
     if (!nav) return;
-    for (const [key, label, open] of SECTIONS) {
-        const button = document.createElement("button");
-        button.className = "section-button" + (key === currentSection ? " active" : "");
-        button.textContent = label;
-        button.addEventListener("click", open);
-        nav.append(button);
-    }
+    const button = document.createElement("button");
+    button.textContent = "← Pradžia";
+    button.addEventListener("click", () => { currentSection = "home"; showProtocolList(); });
+    nav.append(button);
 }
 
 function canReadProtocol(protocol) {
@@ -185,10 +179,31 @@ function userAreaHtml() {
     return userArea;
 }
 
+function adminAreaHtml() {
+    return isAdmin() ? `
+        <div class="admin-box">
+            <strong>Administratoriaus režimas</strong>
+            <div style="margin-top:8px;">Galite peržiūrėti naudotojų pasiūlymus.</div>
+            <div class="admin-actions">
+                <button class="primary" onclick="showAdminSuggestions()">Gauti siūlymai</button>
+            </div>
+        </div>
+    ` : "";
+}
+
+// Main view router. Auth refreshes and "back" buttons call this, so the
+// user stays in the section they opened.
 function showProtocolList() {
-    // Auth refreshes call this; keep the user in the section they opened.
-    if (currentSection === "contacts" && typeof showContacts === "function") {
+    if (currentSection === "home") {
+        showHome();
+        return;
+    }
+    if (currentSection === "contacts") {
         showContacts();
+        return;
+    }
+    if (COMING_SOON[currentSection]) {
+        showComingSoon(currentSection);
         return;
     }
     const app = document.getElementById("app");
@@ -196,20 +211,9 @@ function showProtocolList() {
     if (!categories.includes(currentCategory)) currentCategory = "Visi";
     const userArea = userAreaHtml();
 
-    const adminArea = isAdmin() ? `
-        <div class="admin-box">
-            <strong>Administratoriaus režimas</strong>
-            <div style="margin-top:8px;">Galite valdyti protokolus ir naudotojų pasiūlymus.</div>
-            <div class="admin-actions">
-                <button class="primary" onclick="showAdminSuggestions()">Gauti siūlymai</button>
-            </div>
-        </div>
-    ` : "";
-
     app.innerHTML = `
         <div class="topbar">${userArea}</div>
         ${authErrorHtml()}
-        ${adminArea}
         <nav class="sections" id="sectionNav"></nav>
         <input id="searchInput" class="search" type="text" placeholder="Ieškoti protokolo..." oninput="renderProtocols()">
         <div class="categories" id="categoryButtons"></div>
@@ -225,10 +229,5 @@ function showProtocolList() {
         button.addEventListener("click", () => selectCategory(category));
         categoryButtons.append(button);
     }
-    const suggestionsButton = document.createElement("button");
-    suggestionsButton.textContent = "Siūlymai";
-    suggestionsButton.disabled = authLoading || logoutPending || logoutFailed;
-    suggestionsButton.addEventListener("click", showSuggestionForm);
-    categoryButtons.append(suggestionsButton);
     renderProtocols();
 }
