@@ -1,16 +1,33 @@
 # MyProtocols: darbų būsena
 
-Atnaujinta 2026-10-20. Žymėjimas: `[x]` — atlikta pagal nurodytą įrodymą;
+Atnaujinta 2026-11-25. Žymėjimas: `[x]` — atlikta pagal nurodytą įrodymą;
 `[ ]` — nebaigta arba planuojama. Suderintas reikalavimas nėra įgyvendinimo
 ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
-- [x] Įdiegiama programa (šaka `codex/pwa-install`): `manifest.webmanifest`,
-  ikonos `icons/`, nuorodos `index.html`. Patikra: 32 izoliuoti testai praėjo;
-  vietinėje naršyklėje manifestas ir ikonos užsikrauna. Įdiegimas į darbalaukį
-  galimas tik paskelbus programą HTTPS adresu; paskelbimo vieta dar nesuderinta.
-  Service worker ir veikimas be interneto neįgyvendinti.
+- [x] 2026-11-25 Supabase metaduomenų auditas (skaitomosios užklausos,
+  vykdė naudotojas; rezultatai Git nesaugomi). Nustatyta:
+  - RLS įjungta `profiles`, `protocols`, `suggestions` (FORCE RLS išjungta);
+  - nė viena lentelė neturi `TRUNCATE` teisės `anon` ir `authenticated`
+    rolėms;
+  - `protocols` SELECT tik `access_level = 'public'`; INSERT, UPDATE ir
+    DELETE tik `profiles.role = 'admin'`;
+  - `profiles` turi tik SELECT savo eilutei, todėl rolės pakeisti per API
+    negalima;
+  - `handle_new_user()` (SECURITY DEFINER, `search_path` nustatytas) visada
+    priskiria rolę `user`;
+  - `suggestions`: INSERT ir SELECT tik savo įrašams, administravimas tik
+    adminui.
+- [x] 2026-11-25 Auth nustatymai: naudotojas išjungė savarankišką
+  registraciją. `/auth/v1/settings` patvirtina `disable_signup: true` ir
+  `anonymous_users: false`. Naudotojus kuria administratorius per Dashboard.
+- [x] Įdiegiama programa: `manifest.webmanifest`, ikonos `icons/`, nuorodos
+  `index.html`. Sujungta į `codex/stage1-auth-security`. 2026-11-25 paskelbta
+  per GitHub Pages: https://mindaugasmasedunskas-boop.github.io/MyProtocols/
+  (saugykla padaryta vieša). Naudotojas įdiegė programą Chrome naršyklėje,
+  ir ikona darbalaukyje atsirado. Service worker ir veikimas be interneto
+  neįgyvendinti.
 
 - [x] Greitieji pataisymai (šaka `codex/quick-fixes`): prisijungimas veikia
   paspaudus Enter (forma su `submit`), antraštė be žodžio „Klinikiniai“,
@@ -64,9 +81,15 @@ serverio saugumo. Likę nepatikrinti klausimai pateikti toliau.
 
 ## Pirmas prioritetas: neužbaigtas Supabase saugumo auditas
 
-- [ ] `protocols` ir `suggestions` lentelių `TRUNCATE` teisių atšaukimas
-  `anon` ir `authenticated` rolėms dar nepatvirtintas; patikrinti faktines
-  abiejų lentelių privilegijas. Nežymėti kaip atlikta be patvirtinimo.
+- [ ] Smulkūs audito radiniai (ne kritiniai, keisti tik suderinus):
+  - pasikartojančios politikos (`profiles` ×2 SELECT, `suggestions` admin
+    ×2, `protocols` public SELECT ×2);
+  - `suggestions` INSERT leidžia autoriui pačiam nustatyti `status`,
+    `admin_comment` ir `email`;
+  - `anon` turi nereikalingas INSERT, UPDATE ir DELETE lentelių teises
+    (RLS jas blokuoja, bet jas verta atšaukti).
+- [ ] Tiesioginėmis API užklausomis su tikromis paskyromis patikrinti
+  paprasto naudotojo ir administratoriaus prieigą.
 - [ ] Užbaigti visą serverio saugumo auditą. Dviejų pirmiau nurodytų
   pakeitimų patvirtinimas neužbaigia toliau išvardytų patikrų.
 - [ ] Gauti tikras schemas, lentelių savininkus, RLS/FORCE RLS būklę,
