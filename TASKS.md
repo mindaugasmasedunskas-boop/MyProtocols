@@ -20,6 +20,10 @@ ar tikros duomenų bazės saugumo įrodymas.
   kūrimas, privalomas slaptažodžio pakeitimas, automatinis skyrius.
 - [x] „Mano paskyra“ (šaka `codex/staff-form-fix`): paspaudus savo vardą
   darbuotojas mato savo duomenis ir keičia slaptažodį. Naudotojas patvirtino.
+- [ ] Skubios pagalbos kategorijos (šaka `codex/triage`, `js/triage.js`):
+  suaugusiųjų skubiosios pagalbos mastas (1–4 kategorijos, 6/10/9/15 būklių)
+  pažodžiui iš aprašo 2 priedo nuotraukų, vieša skiltis su paieška.
+  Patikra: 85 izoliuoti testai. Reikia naudotojo patikrinti tekstą.
 - [ ] Atostogos (šaka `codex/vacations`): `js/vacations.js`,
   `supabase/sql/vacations.sql`. Darbuotojas planuoja datas; mato tik tų
   pačių pareigų ir bendro skyriaus kolegų atostogas (RLS); ribos pagal skyrių
