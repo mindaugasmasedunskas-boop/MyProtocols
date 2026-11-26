@@ -902,3 +902,25 @@ p.calc-info {
 button.user-info {
     font-size: inherit;
 }
+
+/* Vacations */
+.vacation-row {
+    display: grid;
+    grid-template-columns: 1.4fr 1.4fr 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border-left: 4px solid #c9a227;
+    background: #fff;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+.vacation-row.status-approved { border-left-color: #2e7d4f; }
+.vacation-row.status-rejected { border-left-color: #b3b8bc; opacity: 0.7; }
+.vacation-status { font-weight: 600; }
+.vacation-warning { color: #a33b1f; font-size: 14px; margin-top: 2px; }
+.vacation-actions { display: flex; gap: 10px; }
+#vacationLimits select { max-width: 420px; padding: 10px; font-size: 16px; margin-bottom: 10px; }
+#vacationLimitFields .form-row { justify-content: flex-start; margin: 6px 0; }
+#vacationLimitFields .limit-name { min-width: 220px; }
+#vacationLimitFields input[type="number"] { width: 90px; margin: 0; padding: 8px; }

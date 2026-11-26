@@ -274,6 +274,10 @@ function showProtocolList() {
         showDocuments();
         return;
     }
+    if (currentSection === "vacations") {
+        showVacations();
+        return;
+    }
     if (currentSection === "staff") {
         showStaff();
         return;
