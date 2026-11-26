@@ -20,6 +20,14 @@ ar tikros duomenų bazės saugumo įrodymas.
   kūrimas, privalomas slaptažodžio pakeitimas, automatinis skyrius.
 - [x] „Mano paskyra“ (šaka `codex/staff-form-fix`): paspaudus savo vardą
   darbuotojas mato savo duomenis ir keičia slaptažodį. Naudotojas patvirtino.
+- [ ] Dokumentai, 2 etapas (šaka `codex/documents-ack`, `supabase/sql/document-acks.sql`):
+  „Reikia susipažinti“ su adresatais (pareigos, skyriai; tuščia = visi),
+  darbuotojas atsidaro failą, uždeda varnelę ir patvirtina; įrašas
+  `document_acks` susietas su versija (sha256), keisti ar trinti negalima;
+  nauja versija reikalauja susipažinti iš naujo; admin mato, kas susipažino;
+  priminimas pradžios ekrane. Tai vidinis įrašas, ne el. parašas; ar jis
+  pakeičia popierinius lapus, turi patvirtinti ligoninės teisininkas ar DAP.
+  Patikra: 90 izoliuotų testų. Reikia naudotojo SQL ir tikros patikros.
 - [ ] Skubios pagalbos kategorijos (šaka `codex/triage`, `js/triage.js`):
   suaugusiųjų skubiosios pagalbos mastas (1–4 kategorijos, 6/10/9/15 būklių)
   pažodžiui iš aprašo 2 priedo nuotraukų, vieša skiltis su paieška.

@@ -35,7 +35,7 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | `js/home.js` | Pagrindinis ekranas: skilčių mygtukai, „Ruošiama“ vaizdas, skilčių atidarymas. |
 | `js/calendar.js` | Kalendorius (tik prisijungus): skelbimai pagal datas, mėnesio vaizdas, budėjimų grafikų įkėlimas ir atidarymas. |
 | `js/calculators.js` | 19 medicininių skaičiuoklių (tik naršyklėje, be duomenų siuntimo). |
-| `js/documents.js` | Dokumentų biblioteka (tik prisijungus): sąrašas, kategorijos, paieška, admin įkėlimas ir trynimas. |
+| `js/documents.js` | Dokumentų biblioteka (tik prisijungus): sąrašas, kategorijos, paieška, admin įkėlimas, keitimas, nauja versija, trynimas; „Susipažinau“ su versija ir admin susipažinimo vaizdas. |
 | `js/triage.js` | Skubios pagalbos kategorijos (vieša): aprašo 2 priedo tekstas, paieška. |
 | `js/vacations.js` | Atostogų planavimas (tik prisijungus): mėnesio sąrašas, prašymas, ribų įspėjimas, admin tvirtinimas ir ribos. |
 | `supabase/sql/vacations.sql` | Lentelė `vacations`, užpildymo trigeris ir RLS. Paleidžiama per Supabase SQL Editor. |
@@ -86,6 +86,7 @@ Tikroji lentelių struktūra ir Dashboard Exposed schemas dar nepatikrintos.
 | `documents` + saugykla `documents` | SELECT; admin įkelia failą, INSERT ir DELETE. Failai privatūs, atidaromi pasirašyta nuoroda; saugomas SHA-256. |
 | `contacts` | SELECT `id,department,name,job_title,phone,email,note,sort_order`, rūšiavimas `sort_order`. Skaito tik prisijungę (`authenticated`); keisti gali tik admin. |
 | `vacations` | SELECT pagal RLS: savo, tų pačių pareigų ir bendro skyriaus kolegų, admin – visi. INSERT tik `start_date,end_date,note` (kita užpildo trigeris). DELETE: savo „planned“ arba admin. UPDATE `status` tik admin. |
+| `document_acks` | SELECT savo arba admin – visų; INSERT `document_id,version_key` (savininką, vardą, laiką ir versiją tikrina trigeris). UPDATE ir DELETE nėra. |
 | `suggestions` | INSERT `title,content,status,user_id,email`; admin SELECT visų stulpelių pagal `created_at`; UPDATE `status,admin_comment,updated_at` pagal `id`. |
 
 Kode naudojami laukai neįrodo jų tipų, apribojimų ar serverio privilegijų.

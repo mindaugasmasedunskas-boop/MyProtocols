@@ -124,6 +124,7 @@ function harness(options = {}) {
                     if (table === 'duty_schedules') return options.schedules?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'contacts') return options.contacts?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'vacations') return options.vacations?.(query) || Promise.resolve({ data: [], error: null });
+                    if (table === 'document_acks') return options.acks?.(query) || Promise.resolve({ data: [], error: null });
                     return options.suggestions?.(query) || Promise.resolve({ data: [], error: null });
                 },
                 maybeSingle() {
@@ -1042,6 +1043,105 @@ test('admin uploads a document, wrong types are rejected and the row stores the 
     assert.equal(row.title, 'Tvarka 2026');
     assert.equal(row.category, 'Tvarkos');
     assert.equal(row.file_name, 'Tvarka 2026.pdf');
+});
+
+const ackDocument = { id: 7, title: 'Rankų higienos tvarka', category: 'Tvarkos', file_path: '2026/7.pdf', file_name: 'higiena.pdf', sha256: 'abc', requires_ack: true, audience_groups: ['Slaugytojai'], audience_departments: ['Priėmimas'], version_at: '2026-11-20T10:00:00Z' };
+const nurseProfile = async () => ({ data: { id: user.id, role: 'user', full_name: 'Ona', staff_group: 'Slaugytojai', departments: ['Priėmimas'] }, error: null });
+
+test('employee must open the document and tick the box before acknowledging', async () => {
+    let acks = [];
+    const h = harness({ home: true, session, profile: nurseProfile,
+        documents: async () => ({ data: [structuredClone(ackDocument)], error: null }),
+        acks: async () => ({ data: acks, error: null }),
+        insert: async value => { acks = [{ document_id: value.document_id, version_key: value.version_key, acknowledged_at: '2026-11-26T12:00:00Z' }]; return { data: [{ id: 1 }], error: null }; } });
+    await h.run('startApp()');
+    await h.settle();
+    await h.settle();
+    assert.match(h.document.getElementById('ackBanner').all().map(e => e.textContent).join(' '), /1 dokumentą/);
+    await h.run('showDocuments()');
+    const card = h.document.getElementById('documentList').children.find(c => c.getAttribute('data-document') === '7');
+    assert.ok(card.children.some(el => el.textContent === 'Reikia susipažinti'));
+    await card.dispatch('click');
+    const check = h.document.getElementById('documentAckCheck');
+    const confirmButton = h.document.getElementById('documentAckConfirm');
+    assert.equal(check.disabled, true);
+    assert.equal(confirmButton.disabled, true);
+    await h.document.getElementById('documentOpen').dispatch('click');
+    assert.deepEqual(h.calls.signed, ['2026/7.pdf']);
+    assert.equal(check.disabled, false);
+    check.checked = true;
+    await check.dispatch('change');
+    assert.equal(confirmButton.disabled, false);
+    await confirmButton.dispatch('click');
+    assert.equal(JSON.stringify(h.calls.inserts[0]), JSON.stringify({ table: 'document_acks', document_id: 7, version_key: 'abc' }));
+    assert.match(h.document.getElementById('documentAckMessage').textContent, /išsaugotas/);
+    assert.ok(h.document.getElementById('documentAckBox').children.some(el => /Susipažinote 2026-11-26 12:00/.test(el.textContent)));
+});
+
+test('an acknowledgement of an older version does not count', async () => {
+    const h = harness({ session, profile: nurseProfile,
+        documents: async () => ({ data: [structuredClone(ackDocument)], error: null }),
+        acks: async () => ({ data: [{ document_id: 7, version_key: 'old', acknowledged_at: '2026-01-01T00:00:00Z' }], error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showDocuments()');
+    assert.equal(h.run('documentPending(documentsList[0])'), true);
+});
+
+test('document outside the audience is opened directly without acknowledgement', async () => {
+    const doctor = async () => ({ data: { id: user.id, role: 'user', staff_group: 'Gydytojai', departments: ['Priėmimas'] }, error: null });
+    const h = harness({ session, profile: doctor, documents: async () => ({ data: [structuredClone(ackDocument)], error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showDocuments()');
+    assert.equal(h.run('documentPending(documentsList[0])'), false);
+    const card = h.document.getElementById('documentList').children.find(c => c.getAttribute('data-document') === '7');
+    await card.dispatch('click');
+    assert.equal(h.document.getElementById('documentAckCheck'), null);
+    assert.deepEqual(h.calls.signed, ['2026/7.pdf']);
+});
+
+test('admin sees who acknowledged the current version and who did not', async () => {
+    const people = [
+        { id: 'n1', full_name: 'Ona', staff_group: 'Slaugytojai', departments: ['Priėmimas'] },
+        { id: 'n2', full_name: '<b>Rūta</b>', staff_group: 'Slaugytojai', departments: ['Priėmimas', 'Chirurgija'] },
+        { id: 'd1', full_name: 'Jonas', staff_group: 'Gydytojai', departments: ['Priėmimas'] }
+    ];
+    const h = harness({ session, profile: adminProfile, profiles: async () => ({ data: people, error: null }),
+        acks: async query => query.filters.some(([k]) => k === 'document_id')
+            ? { data: [{ user_id: 'n1', full_name: 'Ona', version_key: 'abc', acknowledged_at: '2026-11-25T08:30:00Z' }, { user_id: 'n2', full_name: 'Rūta', version_key: 'old', acknowledged_at: '2026-01-01T00:00:00Z' }], error: null }
+            : { data: [], error: null } });
+    await h.run('startApp()');
+    await h.settle();
+    h.context.ackDocument = structuredClone(ackDocument);
+    await h.run('showDocumentAcks(ackDocument)');
+    const list = h.document.getElementById('ackList');
+    assert.equal(list.children[0].textContent, 'Susipažino 1 iš 2.');
+    const rows = list.children.filter(el => (el.className || '').startsWith('ack-row'));
+    assert.equal(rows.length, 2);
+    assert.equal(rows[0].children[0].textContent, '<b>Rūta</b>');
+    assert.equal(rows[0].children[2].textContent, 'Nesusipažino');
+    assert.equal(rows[1].children[2].textContent, 'Susipažino 2026-11-25 08:30');
+});
+
+test('admin changes a document: new version replaces the file and keeps audience', async () => {
+    const h = harness({ session, profile: adminProfile, settings: async query => query.filters.find(([k]) => k === 'key')?.[1] === 'departments'
+        ? { data: { value: ['Priėmimas', 'Chirurgija'] }, error: null } : { data: null, error: null } });
+    await h.run('startApp()');
+    await h.settle();
+    h.context.ackDocument = structuredClone(ackDocument);
+    await h.run('showDocumentForm(ackDocument)');
+    assert.equal(h.document.getElementById('documentRequiresAck').checked, true);
+    h.document.getElementById('documentFile').files = [{ name: 'higiena2.pdf', type: 'application/pdf', size: 100 }];
+    await h.document.getElementById('documentForm').dispatch('submit');
+    const update = h.calls.updates[0].update;
+    assert.equal(update.title, 'Rankų higienos tvarka');
+    assert.equal(update.requires_ack, true);
+    assert.equal(JSON.stringify(update.audience_groups), JSON.stringify(['Slaugytojai']));
+    assert.equal(JSON.stringify(update.audience_departments), JSON.stringify(['Priėmimas']));
+    assert.equal(update.file_name, 'higiena2.pdf');
+    assert.ok(update.version_at);
+    assert.equal(JSON.stringify(h.calls.removed.flat()), JSON.stringify(['2026/7.pdf']));
 });
 
 test('failed document row insert removes the uploaded file', async () => {

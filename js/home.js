@@ -111,12 +111,14 @@ function showHome() {
         <div class="topbar">${userAreaHtml()}</div>
         ${authErrorHtml()}
         ${adminAreaHtml()}
+        <div id="ackBanner"></div>
         <div id="homeTools"></div>
         <div class="home-grid" id="homeGrid"></div>
         <h3 class="home-group">Prisijungusiems darbuotojams</h3>
         <div class="home-grid" id="homeGridLogin"></div>
     `;
     renderDepartmentPicker();
+    if (currentUser) renderAckBanner();
     if (!isAdmin()) homeReorder = null;
     if (isAdmin()) {
         const tools = document.getElementById("homeTools");
