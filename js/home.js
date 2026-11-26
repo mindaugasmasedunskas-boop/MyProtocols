@@ -12,7 +12,7 @@ const HOME_TILES = [
     { key: "codes", title: "Skubios pagalbos kodai", note: "Priėmimo skyriui" },
     { key: "calculators", title: "Skaičiuoklės", note: "Kreatinino klirensas ir kt." },
     { key: "statistics", title: "Statistikos pildymas", note: "Pildymo pavyzdžiai" },
-    { key: "contacts", title: "Kontaktai", note: "Pagrindiniai telefonai" },
+    { key: "contacts", title: "Kontaktai", note: "Pagrindiniai telefonai", login: true },
     { key: "suggestions", title: "Pasiūlymai", note: "Darbui gerinti", login: true },
     { key: "documents", title: "Dokumentai", note: "Susipažinimas ir pasirašymas", login: true }
 ];
@@ -106,6 +106,8 @@ function showHome() {
         ${adminAreaHtml()}
         <div id="homeTools"></div>
         <div class="home-grid" id="homeGrid"></div>
+        <h3 class="home-group">Prisijungusiems darbuotojams</h3>
+        <div class="home-grid" id="homeGridLogin"></div>
     `;
     if (!isAdmin()) homeReorder = null;
     if (isAdmin()) {
@@ -131,8 +133,9 @@ function showHome() {
         });
     }
 
-    const grid = document.getElementById("homeGrid");
+    // Public sections first; login-only sections in their own row.
     for (const tile of orderedTiles()) {
+        const grid = document.getElementById(tile.login ? "homeGridLogin" : "homeGrid");
         const locked = tile.login && !currentUser;
         const button = document.createElement("button");
         button.className = "tile" + (locked ? " locked" : "");
@@ -158,7 +161,7 @@ function showHome() {
                 showHome();
             });
         } else {
-            button.addEventListener("click", () => openSection(tile.key));
+            button.addEventListener("click", () => locked ? showLogin() : openSection(tile.key));
         }
         grid.append(button);
     }
