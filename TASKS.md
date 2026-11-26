@@ -16,8 +16,17 @@ ar tikros duomenų bazės saugumo įrodymas.
   Supabase aplinkoje. Pirmą kartą prisijungus privaloma pasikeisti
   slaptažodį (`must_change_password`, `clear_password_flag()`). Darbuotojo
   skyriai tampa numatytuoju filtru. Patikra: 78 izoliuoti testai praėjo.
-  Edge Function kodas lokaliai nevykdytas (nėra Deno). [ ] Reikia naudotojo
-  SQL ir funkcijos įdiegimo per Supabase Dashboard.
+  SQL paleistas, funkcija įdiegta; naudotojas patvirtino su tikra paskyra:
+  kūrimas, privalomas slaptažodžio pakeitimas, automatinis skyrius.
+- [x] „Mano paskyra“ (šaka `codex/staff-form-fix`): paspaudus savo vardą
+  darbuotojas mato savo duomenis ir keičia slaptažodį. Naudotojas patvirtino.
+- [ ] Atostogos (šaka `codex/vacations`): `js/vacations.js`,
+  `supabase/sql/vacations.sql`. Darbuotojas planuoja datas; mato tik tų
+  pačių pareigų ir bendro skyriaus kolegų atostogas (RLS); ribos pagal skyrių
+  ir pareigas (`app_settings.vacation_limits`) tik įspėja; admin tvirtina,
+  atmeta, trina ir nustato ribas. Įrašas saugo pareigų ir skyrių kopiją
+  kūrimo metu. Patikra: 84 izoliuoti testai. Reikia naudotojo SQL ir tikros
+  patikros su keliomis paskyromis.
 
 - [x] Skyrių filtras, 1 ir 2 žingsniai (šaka `codex/departments`,
   `js/departments.js`). Tai patogumo filtras, ne prieigos kontrolė. Skyrių
@@ -37,7 +46,6 @@ ar tikros duomenų bazės saugumo įrodymas.
   naršyklėje. [ ] Reikia naudotojo SQL: `staff_group` stulpelis,
   `public.is_admin()` (SECURITY DEFINER), admin skaitymo politika, UPDATE
   teisė tik `staff_group` ir `full_name` stulpeliams.
-- [ ] Atostogų pageidavimai: limitai pagal grupę, kalendorius, tvirtinimas.
 
 - [x] Dokumentų biblioteka, 1 etapas (šaka `codex/documents-library`,
   `js/documents.js`), tik prisijungus: sąrašas, kategorijos, paieška,

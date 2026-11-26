@@ -123,6 +123,7 @@ function harness(options = {}) {
                     if (table === 'announcements') return options.announcements?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'duty_schedules') return options.schedules?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'contacts') return options.contacts?.(query) || Promise.resolve({ data: [], error: null });
+                    if (table === 'vacations') return options.vacations?.(query) || Promise.resolve({ data: [], error: null });
                     return options.suggestions?.(query) || Promise.resolve({ data: [], error: null });
                 },
                 maybeSingle() {
@@ -156,7 +157,7 @@ function harness(options = {}) {
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
-    for (const file of ['utils', 'departments', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'documents', 'staff', 'admin', 'admin-protocols', 'suggestions']) {
+    for (const file of ['utils', 'departments', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'documents', 'vacations', 'staff', 'admin', 'admin-protocols', 'suggestions']) {
         vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'js', file + '.js'), 'utf8'), context, { filename: file + '.js' });
     }
     // Most tests exercise the protocol list; home-screen tests set this back.
@@ -669,7 +670,7 @@ test('home screen shows section tiles and locks login-only sections for guests',
     const first = h.document.getElementById('homeGrid').children.map(t => t.getAttribute('data-section'));
     const second = h.document.getElementById('homeGridLogin').children;
     assert.deepEqual(first, ['protocols', 'codes', 'calculators', 'statistics']);
-    assert.deepEqual(second.map(t => t.getAttribute('data-section')), ['calendar', 'contacts', 'suggestions', 'documents']);
+    assert.deepEqual(second.map(t => t.getAttribute('data-section')), ['calendar', 'contacts', 'suggestions', 'documents', 'vacations']);
     assert.ok(second.every(t => t.className.includes('locked')));
     await second[0].dispatch('click');
     assert.ok(h.document.getElementById('loginForm'));
@@ -782,7 +783,7 @@ test('home tiles use the saved order and admin can drag and save a new order', a
     await h.settle();
     const keys = id => h.document.getElementById(id).children.map(t => t.getAttribute('data-section'));
     assert.deepEqual(keys('homeGrid').slice(0, 2), ['protocols', 'codes']);
-    assert.deepEqual(keys('homeGridLogin'), ['contacts', 'calendar', 'suggestions', 'documents']);
+    assert.deepEqual(keys('homeGridLogin'), ['contacts', 'calendar', 'suggestions', 'documents', 'vacations']);
     await h.document.getElementById('homeTools').children[0].dispatch('click');
     const tile = key => [...h.document.getElementById('homeGrid').children, ...h.document.getElementById('homeGridLogin').children]
         .find(t => t.getAttribute('data-section') === key);
@@ -1229,6 +1230,78 @@ test('account view is not available without login', async () => {
     await h.settle();
     h.run('showAccount()');
     assert.equal(h.document.getElementById('passwordForm'), null);
+});
+
+const vacationRows = [
+    { id: 'v1', user_id: user.id, full_name: 'Aš', staff_group: 'Gydytojai', departments: ['Priėmimas'], start_date: '2030-07-01', end_date: '2030-07-10', status: 'planned', note: '' },
+    { id: 'v2', user_id: 'other1', full_name: '<img src=x onerror=alert(1)>', staff_group: 'Gydytojai', departments: ['Priėmimas'], start_date: '2030-07-05', end_date: '2030-07-08', status: 'approved', note: '' },
+    { id: 'v3', user_id: 'other2', full_name: 'Jonas', staff_group: 'Gydytojai', departments: ['Priėmimas'], start_date: '2030-07-06', end_date: '2030-07-07', status: 'planned', note: '' }
+];
+const vacationSettings = async query => {
+    const key = query.filters.find(([k]) => k === 'key')?.[1];
+    if (key === 'vacation_limits') return { data: { value: { 'Priėmimas': { 'Gydytojai': 2 } } }, error: null };
+    if (key === 'departments') return { data: { value: ['Priėmimas', 'Chirurgija'] }, error: null };
+    return { data: null, error: null };
+};
+const doctorProfile = async () => ({ data: { id: user.id, role: 'user', full_name: 'Aš', staff_group: 'Gydytojai', departments: ['Priėmimas'] }, error: null });
+
+test('guest cannot open vacations and reads nothing', async () => {
+    const h = harness({ home: true });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showVacations()');
+    assert.equal(h.run('currentSection'), 'home');
+    assert.equal(h.calls.reads.filter(q => q.table === 'vacations').length, 0);
+});
+
+test('employee sees colleagues safely, own cancel only, and a limit warning', async () => {
+    const h = harness({ home: true, session, profile: doctorProfile, settings: vacationSettings, vacations: async () => ({ data: structuredClone(vacationRows), error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    h.run('vacationMonth = new Date(2030, 6, 1)');
+    await h.run('showVacations()');
+    const rows = h.document.getElementById('vacationsBody').all().filter(el => (el.className || '').startsWith('vacation-row'));
+    assert.equal(rows.length, 3);
+    assert.equal(rows[1].children[0].children[0].textContent, '<img src=x onerror=alert(1)>');
+    assert.equal(rows[0].children[3].children.map(b => b.textContent).join(), 'Atšaukti');
+    assert.equal(rows[1].children[3].children.length, 0);
+    assert.ok(rows[0].all().some(el => el.textContent === 'Viršyta riba: Priėmimas'));
+    assert.equal(h.document.getElementById('sectionNav').all().some(el => el.textContent === 'Ribos'), false);
+});
+
+test('vacation form validates dates and inserts only dates and note', async () => {
+    const h = harness({ home: true, session, profile: doctorProfile, settings: vacationSettings });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showVacations()');
+    h.run('showVacationForm()');
+    h.document.getElementById('vacationStart').value = '2030-08-10';
+    h.document.getElementById('vacationEnd').value = '2030-08-01';
+    await h.run('saveVacation()');
+    assert.match(h.document.getElementById('vacationMessage').textContent, /anksčiau/);
+    assert.equal(h.calls.inserts.length, 0);
+    h.document.getElementById('vacationEnd').value = '2030-08-20';
+    h.document.getElementById('vacationNote').value = 'Kelionė';
+    await h.run('saveVacation()');
+    assert.equal(JSON.stringify(h.calls.inserts[0]), JSON.stringify({ table: 'vacations', start_date: '2030-08-10', end_date: '2030-08-20', note: 'Kelionė' }));
+});
+
+test('admin approves a vacation and saves limits', async () => {
+    const h = harness({ home: true, session, profile: adminProfile, settings: vacationSettings, vacations: async () => ({ data: structuredClone(vacationRows), error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    h.run('vacationMonth = new Date(2030, 6, 1)');
+    await h.run('showVacations()');
+    const row = h.document.getElementById('vacationsBody').all().find(el => (el.className || '').startsWith('vacation-row'));
+    await row.children[3].children.find(b => b.textContent === 'Patvirtinti').dispatch('click');
+    assert.equal(JSON.stringify(h.calls.updates[0].update), JSON.stringify({ status: 'approved' }));
+    h.run('showVacationLimits()');
+    const input = h.document.getElementById('vacationLimitFields').all().find(el => el.getAttribute('data-group') === 'Slaugytojai');
+    input.value = '3';
+    await input.dispatch('input');
+    await h.document.getElementById('vacationLimits').all().find(el => el.textContent === 'Išsaugoti ribas').dispatch('click');
+    const saved = h.calls.upserts.find(u => u.key === 'vacation_limits');
+    assert.equal(JSON.stringify(saved.value), JSON.stringify({ 'Priėmimas': { 'Gydytojai': 2, 'Slaugytojai': 3 } }));
 });
 
 test('admin creates a staff account through the admin-users function', async () => {

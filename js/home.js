@@ -13,7 +13,8 @@ const HOME_TILES = [
     { key: "calendar", title: "Kalendorius", note: "Skelbimai ir budėjimų grafikai", login: true },
     { key: "contacts", title: "Kontaktai", note: "Pagrindiniai telefonai", login: true },
     { key: "suggestions", title: "Pasiūlymai", note: "Darbui gerinti", login: true },
-    { key: "documents", title: "Dokumentai", note: "Susipažinimas ir pasirašymas", login: true }
+    { key: "documents", title: "Dokumentai", note: "Susipažinimas ir pasirašymas", login: true },
+    { key: "vacations", title: "Atostogos", note: "Planavimas ir patvirtinimas", login: true }
 ];
 
 // Tile order set by an admin, stored in app_settings ("home_tile_order").
@@ -90,6 +91,10 @@ function openSection(key) {
     }
     if (key === "contacts") {
         showContacts();
+        return;
+    }
+    if (key === "vacations") {
+        showVacations();
         return;
     }
     if (key === "calendar") {
