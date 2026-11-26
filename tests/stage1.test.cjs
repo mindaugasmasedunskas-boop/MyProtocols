@@ -157,7 +157,7 @@ function harness(options = {}) {
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
-    for (const file of ['utils', 'departments', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'documents', 'vacations', 'staff', 'admin', 'admin-protocols', 'suggestions']) {
+    for (const file of ['utils', 'departments', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'triage', 'documents', 'vacations', 'staff', 'admin', 'admin-protocols', 'suggestions']) {
         vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'js', file + '.js'), 'utf8'), context, { filename: file + '.js' });
     }
     // Most tests exercise the protocol list; home-screen tests set this back.
@@ -682,8 +682,8 @@ test('home tiles open sections and the back button returns home', async () => {
     await h.settle();
     const tile = key => [...h.document.getElementById('homeGrid').children, ...h.document.getElementById('homeGridLogin').children]
         .find(el => el.getAttribute('data-section') === key);
-    await tile('codes').dispatch('click');
-    assert.equal(h.document.getElementById('comingSoonTitle').textContent, 'Skubios pagalbos kodai');
+    await tile('statistics').dispatch('click');
+    assert.equal(h.document.getElementById('comingSoonTitle').textContent, 'Statistikos pildymas');
     await h.document.getElementById('sectionNav').children[0].dispatch('click');
     assert.ok(h.document.getElementById('homeGrid'));
     await tile('protocols').dispatch('click');
@@ -1302,6 +1302,26 @@ test('admin approves a vacation and saves limits', async () => {
     await h.document.getElementById('vacationLimits').all().find(el => el.textContent === 'Išsaugoti ribas').dispatch('click');
     const saved = h.calls.upserts.find(u => u.key === 'vacation_limits');
     assert.equal(JSON.stringify(saved.value), JSON.stringify({ 'Priėmimas': { 'Gydytojai': 2, 'Slaugytojai': 3 } }));
+});
+
+test('triage categories are public, complete and searchable', async () => {
+    const h = harness({ home: true });
+    await h.run('startApp()');
+    await h.settle();
+    const tile = h.document.getElementById('homeGrid').children.find(el => el.getAttribute('data-section') === 'codes');
+    await tile.dispatch('click');
+    assert.equal(JSON.stringify(h.run('TRIAGE.map(c => c.items.length)')), JSON.stringify([6, 10, 9, 15]));
+    const cards = () => h.document.getElementById('triageBody').children.filter(el => (el.className || '').startsWith('triage-card'));
+    assert.equal(cards().length, 4);
+    const search = h.document.getElementById('triageSearch');
+    search.value = 'hipoglikem';
+    await search.dispatch('input');
+    assert.equal(cards().length, 1);
+    assert.equal(cards()[0].className, 'triage-card triage-3');
+    search.value = 'zzzz';
+    await search.dispatch('input');
+    assert.equal(h.document.getElementById('triageBody').children[0].textContent, 'Nieko nerasta.');
+    assert.match(h.document.getElementById('triageSource').textContent, /2 priedas/);
 });
 
 test('admin creates a staff account through the admin-users function', async () => {

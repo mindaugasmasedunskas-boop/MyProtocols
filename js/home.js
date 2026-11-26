@@ -1,13 +1,12 @@
 // Home screen: large buttons, one per section ("program").
 // Sections that are not built yet open a "Ruošiama" placeholder.
 const COMING_SOON = {
-    codes: "Skubios pagalbos kodai",
     statistics: "Statistikos pildymas"
 };
 
 const HOME_TILES = [
     { key: "protocols", title: "Algoritmai", note: "Patvirtinti gydymo algoritmai" },
-    { key: "codes", title: "Skubios pagalbos kodai", note: "Priėmimo skyriui" },
+    { key: "codes", title: "Skubios pagalbos kategorijos", note: "Suaugusiųjų skubiosios pagalbos mastas" },
     { key: "calculators", title: "Skaičiuoklės", note: "Kreatinino klirensas ir kt." },
     { key: "statistics", title: "Statistikos pildymas", note: "Pildymo pavyzdžiai" },
     { key: "calendar", title: "Kalendorius", note: "Skelbimai ir budėjimų grafikai", login: true },

@@ -36,6 +36,7 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | `js/calendar.js` | Kalendorius (tik prisijungus): skelbimai pagal datas, mėnesio vaizdas, budėjimų grafikų įkėlimas ir atidarymas. |
 | `js/calculators.js` | 19 medicininių skaičiuoklių (tik naršyklėje, be duomenų siuntimo). |
 | `js/documents.js` | Dokumentų biblioteka (tik prisijungus): sąrašas, kategorijos, paieška, admin įkėlimas ir trynimas. |
+| `js/triage.js` | Skubios pagalbos kategorijos (vieša): aprašo 2 priedo tekstas, paieška. |
 | `js/vacations.js` | Atostogų planavimas (tik prisijungus): mėnesio sąrašas, prašymas, ribų įspėjimas, admin tvirtinimas ir ribos. |
 | `supabase/sql/vacations.sql` | Lentelė `vacations`, užpildymo trigeris ir RLS. Paleidžiama per Supabase SQL Editor. |
 | `js/staff.js` | Administratoriaus skyrelis „Personalas“: paskyrų kūrimas, pareigos, skyriai, slaptažodžio atstatymas, sąrašai. |

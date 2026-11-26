@@ -266,6 +266,10 @@ function showProtocolList() {
         showCalendar();
         return;
     }
+    if (currentSection === "codes") {
+        showTriage();
+        return;
+    }
     if (currentSection === "calculators") {
         showCalculators();
         return;
