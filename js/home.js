@@ -2,7 +2,6 @@
 // Sections that are not built yet open a "Ruošiama" placeholder.
 const COMING_SOON = {
     codes: "Skubios pagalbos kodai",
-    calculators: "Skaičiuoklės",
     statistics: "Statistikos pildymas",
     documents: "Dokumentai"
 };

@@ -583,3 +583,81 @@
     gap: 10px;
     margin: 10px 0;
 }
+
+
+/* Skaičiuoklės */
+.calc-warning {
+    background: #fdf6e3;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+}
+
+.calc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+.calc-card {
+    margin: 0;
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 16px;
+    font-weight: 600;
+    color: #2f4656;
+    border: 1px solid #e1e6ea;
+    box-shadow: none;
+}
+
+.calc-card:hover {
+    border-color: #587386;
+}
+
+.calc-form {
+    max-width: 640px;
+    margin-top: 12px;
+}
+
+.calc-row > span:first-child {
+    min-width: 200px;
+}
+
+.calc-row input[type="text"], .calc-row select {
+    width: 160px;
+    padding: 8px 10px;
+    margin: 0;
+}
+
+.calc-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+}
+
+.calc-result {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #f1f4f6;
+}
+
+.calc-value {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.calc-result.level-low {
+    background: #e6f2e9;
+    color: #1f5130;
+}
+
+.calc-result.level-mid {
+    background: #fdf0d5;
+    color: #6b4a0e;
+}
+
+.calc-result.level-high {
+    background: #fbe3e1;
+    color: #7a1f1a;
+}

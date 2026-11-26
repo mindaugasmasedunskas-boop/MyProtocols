@@ -34,6 +34,7 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | `js/protocols.js` | Užklausa, vieša prieiga, kategorijos, paieška, peržiūra, kopijavimas. |
 | `js/home.js` | Pagrindinis ekranas: skilčių mygtukai, „Ruošiama“ vaizdas, skilčių atidarymas. |
 | `js/calendar.js` | Kalendorius (tik prisijungus): skelbimai pagal datas, mėnesio vaizdas, budėjimų grafikų įkėlimas ir atidarymas. |
+| `js/calculators.js` | 19 medicininių skaičiuoklių (tik naršyklėje, be duomenų siuntimo). |
 | `js/contacts.js` | Kontaktų knyga (tik prisijungus): užklausa, paieška, grupavimas, `tel:`/`mailto:` nuorodos. |
 | `js/suggestions.js` | Prisijungusio naudotojo pasiūlymo forma ir siuntimas. |
 | `js/admin.js` | Pasiūlymų sąrašas, būsenos ir administratoriaus komentarai. |
@@ -91,7 +92,7 @@ node --test tests/stage1.test.cjs
 ```
 
 Šiam rinkiniui pakanka Node.js, papildomų paketų nereikia. Esamo rinkinio
-56 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos, 5 kalendoriaus). Tai imitaciniai,
+58 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos, 5 kalendoriaus, 2 skaičiuoklių). Tai imitaciniai,
 ne tikro Supabase testai.
 
 ```powershell
