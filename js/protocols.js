@@ -251,6 +251,10 @@ function showProtocolList() {
         showContacts();
         return;
     }
+    if (currentSection === "calendar") {
+        showCalendar();
+        return;
+    }
     if (COMING_SOON[currentSection]) {
         showComingSoon(currentSection);
         return;

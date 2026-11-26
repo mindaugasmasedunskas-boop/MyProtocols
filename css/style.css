@@ -474,3 +474,112 @@
     color: #587386;
     font-size: 18px;
 }
+
+
+/* Kalendorius: skelbimai, mėnuo, budėjimų grafikai */
+.calendar-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 16px;
+}
+
+.cal-box {
+    background: white;
+    border: 1px solid #e1e6ea;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+}
+
+.cal-box h3 {
+    margin: 0 0 10px;
+    font-size: 17px;
+    color: #2f4656;
+}
+
+.announcement {
+    background: #f1f4f6;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+
+.announcement.important {
+    background: #fdf0d5;
+    color: #6b4a0e;
+}
+
+.announcement-text {
+    white-space: pre-wrap;
+}
+
+.cal-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 0;
+    border-top: 1px solid #edf0f2;
+}
+
+.cal-muted, .cal-empty {
+    color: #6b747b;
+    font-size: 14px;
+}
+
+.link-button {
+    border: none;
+    background: none;
+    padding: 2px 6px;
+    color: #2f5f80;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.month-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
+}
+
+.month-grid .dow {
+    font-size: 12px;
+    color: #8a949b;
+}
+
+.month-grid .day {
+    padding: 6px 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+}
+
+.month-grid .day.has {
+    background: #e3eef6;
+    color: #1f4e6e;
+}
+
+.month-grid .day.today {
+    border-color: #587386;
+    font-weight: 600;
+}
+
+.month-grid .day.selected {
+    background: #587386;
+    color: white;
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 10px 0;
+}

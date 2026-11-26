@@ -12,6 +12,7 @@ const HOME_TILES = [
     { key: "codes", title: "Skubios pagalbos kodai", note: "Priėmimo skyriui" },
     { key: "calculators", title: "Skaičiuoklės", note: "Kreatinino klirensas ir kt." },
     { key: "statistics", title: "Statistikos pildymas", note: "Pildymo pavyzdžiai" },
+    { key: "calendar", title: "Kalendorius", note: "Skelbimai ir budėjimų grafikai", login: true },
     { key: "contacts", title: "Kontaktai", note: "Pagrindiniai telefonai", login: true },
     { key: "suggestions", title: "Pasiūlymai", note: "Darbui gerinti", login: true },
     { key: "documents", title: "Dokumentai", note: "Susipažinimas ir pasirašymas", login: true }
@@ -91,6 +92,10 @@ function openSection(key) {
     }
     if (key === "contacts") {
         showContacts();
+        return;
+    }
+    if (key === "calendar") {
+        showCalendar();
         return;
     }
     currentSection = key;
