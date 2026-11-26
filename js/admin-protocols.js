@@ -134,3 +134,72 @@ async function deleteProtocol(id) {
     await loadProtocols();
     if (version === authVersion) showProtocolList();
 }
+
+// =============================================
+// ADMIN — ALGORITHM ORDER (drag and drop, saved as sort_order)
+// =============================================
+
+function renderProtocolAdminTools(nav) {
+    if (protocolReorder) {
+        nav.append(reorderBar("Tempkite korteles į norimą vietą.", saveProtocolOrder, () => {
+            protocolReorder = null;
+            showProtocolList();
+        }));
+        return;
+    }
+    const add = document.createElement("button");
+    add.className = "primary";
+    add.textContent = "+ Pridėti algoritmą";
+    add.addEventListener("click", () => showProtocolForm());
+    const reorder = document.createElement("button");
+    reorder.textContent = "Keisti tvarką";
+    reorder.addEventListener("click", startProtocolReorder);
+    nav.append(add, reorder);
+}
+
+function startProtocolReorder() {
+    if (!isAdmin()) return;
+    if (currentCategory === "Visi") {
+        alert("Pirmiausia pasirinkite kategoriją, kurioje norite keisti tvarką.");
+        return;
+    }
+    protocolReorder = protocols
+        .filter(p => canReadProtocol(p) && p.category === currentCategory)
+        .sort(compareProtocols)
+        .map(p => String(p.id));
+    showProtocolList();
+}
+
+async function saveProtocolOrder(message, button) {
+    if (!isAdmin() || !protocolReorder || protocolSavePending) return;
+    const changes = protocolReorder
+        .map((id, index) => ({ id, sortOrder: index + 1, protocol: protocols.find(p => String(p.id) === id) }))
+        .filter(item => item.protocol && Number(item.protocol.sort_order) !== item.sortOrder);
+
+    protocolSavePending = true;
+    button.disabled = true;
+    message.textContent = "Saugoma...";
+    const version = authVersion;
+    let failed = false;
+    try {
+        const results = await Promise.all(changes.map(item => supabaseClient
+            .from("protocols")
+            .update({ sort_order: item.sortOrder })
+            .eq("id", item.protocol.id)
+            .select("id")));
+        failed = results.some(({ data, error }) => error || !Array.isArray(data) || !data.length);
+    } catch {
+        failed = true;
+    } finally {
+        protocolSavePending = false;
+        button.disabled = false;
+    }
+    if (version !== authVersion || !isAdmin()) return;
+    if (failed) {
+        message.textContent = "Nepavyko išsaugoti visos tvarkos. Atnaujinkite puslapį ir bandykite dar kartą.";
+        return;
+    }
+    protocolReorder = null;
+    await loadProtocols();
+    if (version === authVersion) showProtocolList();
+}

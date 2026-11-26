@@ -17,6 +17,71 @@ const HOME_TILES = [
     { key: "documents", title: "Dokumentai", note: "Susipažinimas ir pasirašymas", login: true }
 ];
 
+// Tile order set by an admin, stored in app_settings ("home_tile_order").
+let homeOrder = null;
+let homeOrderLoaded = false;
+let homeOrderLoading = false;
+let homeReorder = null;
+let homeSavePending = false;
+
+function orderedTiles(order = homeReorder || homeOrder) {
+    const keys = Array.isArray(order) ? order : [];
+    const rank = tile => {
+        const index = keys.indexOf(tile.key);
+        return index < 0 ? keys.length + HOME_TILES.indexOf(tile) : index;
+    };
+    return HOME_TILES.slice().sort((a, b) => rank(a) - rank(b));
+}
+
+async function loadHomeOrder() {
+    homeOrderLoading = true;
+    try {
+        const { data, error } = await supabaseClient
+            .from("app_settings")
+            .select("value")
+            .eq("key", "home_tile_order")
+            .maybeSingle();
+        if (!error && Array.isArray(data?.value)) {
+            homeOrder = data.value.filter(key => typeof key === "string");
+        }
+    } catch {
+        // Keep the default order; the home screen must work without settings.
+    } finally {
+        homeOrderLoaded = true;
+        homeOrderLoading = false;
+    }
+}
+
+async function saveHomeOrder(message, button) {
+    if (!isAdmin() || !homeReorder || homeSavePending) return;
+    homeSavePending = true;
+    button.disabled = true;
+    message.textContent = "Saugoma...";
+    const version = authVersion;
+    const order = homeReorder.slice();
+    let data;
+    let error;
+    try {
+        ({ data, error } = await supabaseClient
+            .from("app_settings")
+            .upsert({ key: "home_tile_order", value: order, updated_at: new Date().toISOString() })
+            .select("key"));
+    } catch (requestError) {
+        error = requestError;
+    } finally {
+        homeSavePending = false;
+        button.disabled = false;
+    }
+    if (version !== authVersion || !isAdmin()) return;
+    if (error || !Array.isArray(data) || !data.length) {
+        message.textContent = "Nepavyko išsaugoti: " + (error ? errorText(error) : "neturite teisės keisti nustatymų.");
+        return;
+    }
+    homeOrder = order;
+    homeReorder = null;
+    showHome();
+}
+
 function openSection(key) {
     if (key === "suggestions") {
         // The form returns to the home screen and asks guests to log in.
@@ -39,10 +104,35 @@ function showHome() {
         <div class="topbar">${userAreaHtml()}</div>
         ${authErrorHtml()}
         ${adminAreaHtml()}
+        <div id="homeTools"></div>
         <div class="home-grid" id="homeGrid"></div>
     `;
+    if (!isAdmin()) homeReorder = null;
+    if (isAdmin()) {
+        const tools = document.getElementById("homeTools");
+        if (homeReorder) {
+            tools.append(reorderBar("Tempkite mygtukus į norimą vietą.", saveHomeOrder, () => {
+                homeReorder = null;
+                showHome();
+            }));
+        } else {
+            const start = document.createElement("button");
+            start.textContent = "Keisti mygtukų tvarką";
+            start.addEventListener("click", () => {
+                homeReorder = orderedTiles().map(tile => tile.key);
+                showHome();
+            });
+            tools.append(start);
+        }
+    }
+    if (!homeOrderLoaded && !homeOrderLoading) {
+        loadHomeOrder().then(() => {
+            if (currentSection === "home" && document.getElementById("homeGrid")) showHome();
+        });
+    }
+
     const grid = document.getElementById("homeGrid");
-    for (const tile of HOME_TILES) {
+    for (const tile of orderedTiles()) {
         const locked = tile.login && !currentUser;
         const button = document.createElement("button");
         button.className = "tile" + (locked ? " locked" : "");
@@ -62,7 +152,14 @@ function showHome() {
             badge.textContent = "Ruošiama";
             button.append(badge);
         }
-        button.addEventListener("click", () => openSection(tile.key));
+        if (homeReorder) {
+            makeDraggable(button, tile.key, (from, to) => {
+                homeReorder = moveKey(homeReorder, from, to);
+                showHome();
+            });
+        } else {
+            button.addEventListener("click", () => openSection(tile.key));
+        }
         grid.append(button);
     }
 }

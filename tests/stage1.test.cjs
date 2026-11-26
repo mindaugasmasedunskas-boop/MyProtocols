@@ -68,7 +68,7 @@ function harness(options = {}) {
         getElementById: id => app.all().find(el => el.getAttribute('id') === id) || null,
         createElement: tag => new Element(tag)
     };
-    const calls = { reads: [], copied: [], alerts: [], subscriptions: 0, inserts: [], updates: [], deletes: [] };
+    const calls = { reads: [], copied: [], alerts: [], subscriptions: 0, inserts: [], updates: [], deletes: [], upserts: [] };
     let listener;
     const emit = (event, value) => listener?.(event, value);
     const client = {
@@ -109,6 +109,7 @@ function harness(options = {}) {
                 },
                 maybeSingle() {
                     calls.reads.push(query);
+                    if (table === 'app_settings') return options.settings?.(query) || Promise.resolve({ data: null, error: null });
                     return options.profile?.(query) || Promise.resolve({ data: { id: user.id, role: 'user' }, error: null });
                 },
                 insert(value) {
@@ -117,6 +118,11 @@ function harness(options = {}) {
                     return Object.assign(result, { select: () => result });
                 },
                 delete() { query.delete = true; return builder; },
+                upsert(value) {
+                    calls.upserts.push({ table, ...value });
+                    const result = options.upsert?.(value) || Promise.resolve({ data: [{ key: value.key }], error: null });
+                    return Object.assign(result, { select: () => result });
+                },
                 update(value) { query.update = value; return builder; }
             };
             return builder;
@@ -727,4 +733,65 @@ test('algorithm categories follow the agreed order with "Kitos" last', async () 
     assert.deepEqual(buttons, ['Visi', 'Širdis ir kraujotaka', 'Medžiagų apykaita ir inkstai', 'Kvėpavimas ir infekcinės ligos', 'Neurologija', 'Zeta grupė', 'Kitos']);
     const listed = h.document.getElementById('protocolList').children.map(card => card.children[0].textContent);
     assert.deepEqual(listed, ['Širdis ir kraujotaka', 'Medžiagų apykaita ir inkstai', 'Kvėpavimas ir infekcinės ligos', 'Neurologija', 'Zeta grupė', 'Kitos', '']);
+});
+
+test('home tiles use the saved order and admin can drag and save a new order', async () => {
+    const saved = ['contacts', 'protocols'];
+    const h = harness({ home: true, session, profile: adminProfile, settings: async () => ({ data: { value: saved }, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    const keys = () => h.document.getElementById('homeGrid').children.map(t => t.getAttribute('data-section'));
+    assert.deepEqual(keys().slice(0, 3), ['contacts', 'protocols', 'codes']);
+    await h.document.getElementById('homeTools').children[0].dispatch('click');
+    const tile = key => h.document.getElementById('homeGrid').children.find(t => t.getAttribute('data-section') === key);
+    await tile('documents').dispatch('dragstart');
+    await tile('contacts').dispatch('drop');
+    assert.equal(keys()[0], 'documents');
+    const bar = h.document.getElementById('homeTools').children[0];
+    await bar.children[1].dispatch('click');
+    assert.equal(h.calls.upserts[0].key, 'home_tile_order');
+    assert.equal(h.calls.upserts[0].value[0], 'documents');
+    assert.ok(h.document.getElementById('homeTools').children[0].textContent.includes('Keisti'));
+});
+
+test('non-admin cannot see reorder controls on home or algorithms', async () => {
+    const h = harness({ home: true, session });
+    await h.run('startApp()');
+    await h.settle();
+    assert.equal(h.document.getElementById('homeTools').children.length, 0);
+    h.run('currentSection = "protocols"; showProtocolList()');
+    assert.equal(h.document.getElementById('sectionNav').children.some(b => b.textContent === 'Keisti tvarką'), false);
+});
+
+test('admin reorders algorithms within a category and saves sort_order', async () => {
+    const rows = [
+        { id: 'a', title: 'Alfa', category: 'Neurologija', content: 'x', access_level: 'public', sort_order: 0 },
+        { id: 'b', title: 'Beta', category: 'Neurologija', content: 'x', access_level: 'public', sort_order: 0 },
+        { id: 'c', title: 'Gama', category: 'Neurologija', content: 'x', access_level: 'public', sort_order: 0 }
+    ];
+    const h = harness({ session, profile: adminProfile, protocols: async () => ({ data: rows, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('startProtocolReorder()');
+    assert.equal(h.calls.alerts.length, 1);
+    h.run('selectCategory("Neurologija")');
+    await h.run('startProtocolReorder()');
+    const cards = () => h.document.getElementById('protocolList').children;
+    await cards()[2].dispatch('dragstart');
+    await cards()[0].dispatch('drop');
+    assert.deepEqual(cards().map(c => c.children[1].textContent), ['Gama', 'Alfa', 'Beta']);
+    const bar = h.document.getElementById('sectionNav').children.find(el => el.className === 'reorder-bar');
+    await bar.children[1].dispatch('click');
+    assert.deepEqual(h.calls.updates.map(u => [u.filters[0][1], u.update.sort_order]), [['c', 1], ['a', 2], ['b', 3]]);
+});
+
+test('algorithms are listed by sort_order within a category', async () => {
+    const rows = [
+        { id: 'a', title: 'Alfa', category: 'Neurologija', content: 'x', access_level: 'public', sort_order: 2 },
+        { id: 'b', title: 'Beta', category: 'Neurologija', content: 'x', access_level: 'public', sort_order: 1 }
+    ];
+    const h = harness({ protocols: async () => ({ data: rows, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    assert.deepEqual(h.document.getElementById('protocolList').children.map(c => c.children[1].textContent), ['Beta', 'Alfa']);
 });
