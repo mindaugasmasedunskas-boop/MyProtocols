@@ -36,6 +36,7 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | `js/calendar.js` | Kalendorius (tik prisijungus): skelbimai pagal datas, mėnesio vaizdas, budėjimų grafikų įkėlimas ir atidarymas. |
 | `js/calculators.js` | 19 medicininių skaičiuoklių (tik naršyklėje, be duomenų siuntimo). |
 | `js/documents.js` | Dokumentų biblioteka (tik prisijungus): sąrašas, kategorijos, paieška, admin įkėlimas ir trynimas. |
+| `js/staff.js` | Administratoriui: darbuotojų sąrašas ir grupių priskyrimas. |
 | `js/contacts.js` | Kontaktų knyga (tik prisijungus): užklausa, paieška, grupavimas, `tel:`/`mailto:` nuorodos. |
 | `js/suggestions.js` | Prisijungusio naudotojo pasiūlymo forma ir siuntimas. |
 | `js/admin.js` | Pasiūlymų sąrašas, būsenos ir administratoriaus komentarai. |
@@ -73,7 +74,7 @@ Tikroji lentelių struktūra ir Dashboard Exposed schemas dar nepatikrintos.
 | Objektas | Kliento operacijos ir laukai |
 | --- | --- |
 | `protocols` | SELECT `id,title,category,content,access_level`, filtras `access_level = public`, rūšiavimas pagal `title`. Neprijungta admin funkcija numato UPDATE `access_level` pagal `id`. |
-| `profiles` | SELECT `id,role` pagal prisijungusio naudotojo ID. Klientas profilių nekuria ir nekeičia. |
+| `profiles` | SELECT `id,role` pagal prisijungusio naudotojo ID. Admin: SELECT visų (`is_admin()`), UPDATE tik `staff_group`, `full_name`. Rolės klientas nekeičia. |
 | `app_settings` | SELECT `value` pagal `key` (`home_tile_order`); admin UPSERT. Skaito visi, rašo tik admin. |
 | `announcements` | SELECT pagal `end_date`; admin INSERT ir DELETE. Skaito tik prisijungę. |
 | `duty_schedules` + saugykla `schedules` | SELECT; admin įkelia failą ir INSERT, DELETE. Failai privatūs, atidaromi pasirašyta nuoroda. |
@@ -94,7 +95,7 @@ node --test tests/stage1.test.cjs
 ```
 
 Šiam rinkiniui pakanka Node.js, papildomų paketų nereikia. Esamo rinkinio
-64 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos, 5 kalendoriaus, 3 skaičiuoklių, 5 dokumentų). Tai imitaciniai,
+68 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos, 5 kalendoriaus, 3 skaičiuoklių, 5 dokumentų, 4 darbuotojų grupių). Tai imitaciniai,
 ne tikro Supabase testai.
 
 ```powershell

@@ -232,9 +232,10 @@ function adminAreaHtml() {
     return isAdmin() ? `
         <div class="admin-box">
             <strong>Administratoriaus režimas</strong>
-            <div style="margin-top:8px;">Galite peržiūrėti naudotojų pasiūlymus.</div>
+            <div style="margin-top:8px;">Galite peržiūrėti pasiūlymus ir tvarkyti darbuotojų grupes.</div>
             <div class="admin-actions">
                 <button class="primary" onclick="showAdminSuggestions()">Gauti siūlymai</button>
+                <button onclick="showStaff()">Darbuotojai</button>
             </div>
         </div>
     ` : "";
@@ -261,6 +262,10 @@ function showProtocolList() {
     }
     if (currentSection === "documents") {
         showDocuments();
+        return;
+    }
+    if (currentSection === "staff") {
+        showStaff();
         return;
     }
     if (COMING_SOON[currentSection]) {

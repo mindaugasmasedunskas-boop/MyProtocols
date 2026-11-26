@@ -747,3 +747,39 @@ p.calc-info {
     font-size: 16px;
     line-height: 1.3;
 }
+
+/* Darbuotojai (administratoriui) */
+.staff-table {
+    background: white;
+    border: 1px solid #e1e6ea;
+    border-radius: 12px;
+    padding: 4px 16px;
+    margin-bottom: 16px;
+}
+
+.staff-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px 120px;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid #edf0f2;
+}
+
+.staff-row:first-child {
+    border-top: none;
+}
+
+.staff-row select {
+    margin: 0;
+    padding: 8px 10px;
+}
+
+.staff-admin {
+    position: static;
+    margin-left: 8px;
+}
+
+.staff-groups textarea {
+    min-height: 120px;
+}
