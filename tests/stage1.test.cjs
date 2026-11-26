@@ -68,7 +68,7 @@ function harness(options = {}) {
         getElementById: id => app.all().find(el => el.getAttribute('id') === id) || null,
         createElement: tag => new Element(tag)
     };
-    const calls = { reads: [], copied: [], alerts: [], subscriptions: 0, inserts: [], updates: [], deletes: [], upserts: [] };
+    const calls = { reads: [], copied: [], alerts: [], subscriptions: 0, inserts: [], updates: [], deletes: [], upserts: [], uploads: [], signed: [], removed: [], opened: [] };
     let listener;
     const emit = (event, value) => listener?.(event, value);
     const client = {
@@ -83,10 +83,19 @@ function harness(options = {}) {
             signInWithPassword: credentials => options.signIn?.(credentials, emit) || Promise.resolve({ data: { user, session }, error: null }),
             signOut: () => options.signOut?.(emit) || Promise.resolve({ error: null })
         },
+        storage: {
+            from: bucket => ({
+                upload: (p, file, opts) => { calls.uploads.push({ bucket, path: p, type: opts?.contentType }); return options.upload?.(p) || Promise.resolve({ data: { path: p }, error: null }); },
+                createSignedUrl: p => { calls.signed.push(p); return Promise.resolve({ data: { signedUrl: 'https://signed.example.test/' + p }, error: null }); },
+                remove: paths => { calls.removed.push(...paths); return Promise.resolve({ data: [], error: null }); }
+            })
+        },
         from(table) {
             const query = { table, columns: null, filters: [] };
             const builder = {
                 select(columns) { query.columns = columns; return builder; },
+                gte(key, value) { query.filters.push([key + '>=', value]); return builder; },
+                lte(key, value) { query.filters.push([key + '<=', value]); return builder; },
                 eq(key, value) {
                     query.filters.push([key, value]);
                     if (query.delete) {
@@ -104,6 +113,8 @@ function harness(options = {}) {
                 order() {
                     calls.reads.push(query);
                     if (table === 'protocols') return options.protocols?.(query) || Promise.resolve({ data: [publicProtocol], error: null });
+                    if (table === 'announcements') return options.announcements?.(query) || Promise.resolve({ data: [], error: null });
+                    if (table === 'duty_schedules') return options.schedules?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'contacts') return options.contacts?.(query) || Promise.resolve({ data: [], error: null });
                     return options.suggestions?.(query) || Promise.resolve({ data: [], error: null });
                 },
@@ -133,10 +144,11 @@ function harness(options = {}) {
         navigator: { clipboard: { writeText: async value => { calls.copied.push(value); } } },
         alert: value => calls.alerts.push(value),
         confirm: () => options.confirm ?? true,
+        window: { open: url => { const win = { location: { href: url }, close() { win.closed = true; } }; calls.opened.push(win); return win; } },
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
-    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'home', 'admin', 'admin-protocols', 'suggestions']) {
+    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'admin', 'admin-protocols', 'suggestions']) {
         vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'js', file + '.js'), 'utf8'), context, { filename: file + '.js' });
     }
     // Most tests exercise the protocol list; home-screen tests set this back.
@@ -649,7 +661,7 @@ test('home screen shows section tiles and locks login-only sections for guests',
     const first = h.document.getElementById('homeGrid').children.map(t => t.getAttribute('data-section'));
     const second = h.document.getElementById('homeGridLogin').children;
     assert.deepEqual(first, ['protocols', 'codes', 'calculators', 'statistics']);
-    assert.deepEqual(second.map(t => t.getAttribute('data-section')), ['contacts', 'suggestions', 'documents']);
+    assert.deepEqual(second.map(t => t.getAttribute('data-section')), ['calendar', 'contacts', 'suggestions', 'documents']);
     assert.ok(second.every(t => t.className.includes('locked')));
     await second[0].dispatch('click');
     assert.ok(h.document.getElementById('loginForm'));
@@ -762,7 +774,7 @@ test('home tiles use the saved order and admin can drag and save a new order', a
     await h.settle();
     const keys = id => h.document.getElementById(id).children.map(t => t.getAttribute('data-section'));
     assert.deepEqual(keys('homeGrid').slice(0, 2), ['protocols', 'codes']);
-    assert.deepEqual(keys('homeGridLogin'), ['contacts', 'suggestions', 'documents']);
+    assert.deepEqual(keys('homeGridLogin'), ['contacts', 'calendar', 'suggestions', 'documents']);
     await h.document.getElementById('homeTools').children[0].dispatch('click');
     const tile = key => [...h.document.getElementById('homeGrid').children, ...h.document.getElementById('homeGridLogin').children]
         .find(t => t.getAttribute('data-section') === key);
@@ -816,4 +828,85 @@ test('algorithms are listed by sort_order within a category', async () => {
     await h.run('startApp()');
     await h.settle();
     assert.deepEqual(h.document.getElementById('protocolList').children.map(c => c.children[1].textContent), ['Beta', 'Alfa']);
+});
+
+const ymdLocal = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+const todayKey = ymdLocal(new Date());
+const futureKey = (() => { const d = new Date(); d.setDate(d.getDate() + 3); return ymdLocal(d); })();
+const sampleAnnouncements = [
+    { id: 1, body: 'KT neveikia <b>iki 14</b>', start_date: todayKey, end_date: todayKey, important: true },
+    { id: 2, body: 'Mokymai', start_date: futureKey, end_date: futureKey, important: false }
+];
+
+test('guest cannot open the calendar', async () => {
+    const h = harness({ home: true });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showCalendar()');
+    assert.ok(h.document.getElementById('homeGrid'));
+    assert.equal(h.calls.reads.some(q => q.table === 'announcements'), false);
+});
+
+test('calendar shows today announcements as text, upcoming events and marked days', async () => {
+    const h = harness({ session, announcements: async () => ({ data: sampleAnnouncements, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showCalendar()');
+    const day = h.document.getElementById('dayList').children;
+    assert.equal(day.length, 1);
+    assert.equal(day[0].children[0].textContent, 'KT neveikia <b>iki 14</b>');
+    assert.ok(day[0].className.includes('important'));
+    assert.match(h.document.getElementById('dayHeading').textContent, /^Šiandien/);
+    assert.equal(h.document.getElementById('upcomingList').children[0].children[1].textContent, 'Mokymai');
+    const today = h.document.getElementById('monthGrid').children.find(c => c.getAttribute('data-date') === todayKey);
+    assert.ok(today.className.includes('has') && today.className.includes('today'));
+    assert.equal(h.document.getElementById('sectionNav').children.some(b => b.textContent === '+ Skelbimas'), false);
+});
+
+test('admin adds an announcement with validated dates', async () => {
+    const h = harness({ session, profile: adminProfile });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showCalendar()');
+    h.run('showAnnouncementForm()');
+    h.document.getElementById('announcementBody').value = 'Remontas';
+    h.document.getElementById('announcementStart').value = '2026-12-05';
+    h.document.getElementById('announcementEnd').value = '2026-12-01';
+    await h.document.getElementById('announcementForm').dispatch('submit');
+    assert.equal(h.calls.inserts.length, 0);
+    assert.match(h.document.getElementById('announcementMessage').textContent, /Pabaigos data/);
+    h.document.getElementById('announcementEnd').value = '2026-12-07';
+    h.document.getElementById('announcementImportant').checked = true;
+    await h.document.getElementById('announcementForm').dispatch('submit');
+    assert.deepEqual(h.calls.inserts[0], { table: 'announcements', body: 'Remontas', start_date: '2026-12-05', end_date: '2026-12-07', important: true });
+});
+
+test('opening a schedule uses a short-lived signed link', async () => {
+    const h = harness({ session, schedules: async () => ({ data: [{ id: 9, month: '2026-11-01', title: 'Lapkritis 2026', file_path: '2026-11/1.pdf' }], error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showCalendar()');
+    await h.run('openSchedule(schedules[0])');
+    assert.deepEqual(h.calls.signed, ['2026-11/1.pdf']);
+    assert.equal(h.calls.opened[0].location.href, 'https://signed.example.test/2026-11/1.pdf');
+    assert.equal(h.calls.opened[0].opener, null);
+});
+
+test('admin uploads a schedule file and wrong file types are rejected', async () => {
+    const h = harness({ session, profile: adminProfile });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showCalendar()');
+    h.run('showScheduleForm()');
+    h.document.getElementById('scheduleMonth').value = '2026-12';
+    h.document.getElementById('scheduleFile').files = [{ type: 'application/x-msdownload', size: 100 }];
+    await h.document.getElementById('scheduleForm').dispatch('submit');
+    assert.equal(h.calls.uploads.length, 0);
+    h.document.getElementById('scheduleFile').files = [{ type: 'application/pdf', size: 1000 }];
+    await h.document.getElementById('scheduleForm').dispatch('submit');
+    assert.equal(h.calls.uploads[0].bucket, 'schedules');
+    assert.match(h.calls.uploads[0].path, /^2026-12\/\d+\.pdf$/);
+    assert.equal(h.calls.inserts[0].table, 'duty_schedules');
+    assert.equal(h.calls.inserts[0].title, 'Gruodis 2026');
+    assert.equal(h.calls.inserts[0].month, '2026-12-01');
 });

@@ -33,6 +33,7 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | `js/auth.js` | Sesija, prisijungimas, atsijungimas, profilis, admin patikra. |
 | `js/protocols.js` | Užklausa, vieša prieiga, kategorijos, paieška, peržiūra, kopijavimas. |
 | `js/home.js` | Pagrindinis ekranas: skilčių mygtukai, „Ruošiama“ vaizdas, skilčių atidarymas. |
+| `js/calendar.js` | Kalendorius (tik prisijungus): skelbimai pagal datas, mėnesio vaizdas, budėjimų grafikų įkėlimas ir atidarymas. |
 | `js/contacts.js` | Kontaktų knyga (tik prisijungus): užklausa, paieška, grupavimas, `tel:`/`mailto:` nuorodos. |
 | `js/suggestions.js` | Prisijungusio naudotojo pasiūlymo forma ir siuntimas. |
 | `js/admin.js` | Pasiūlymų sąrašas, būsenos ir administratoriaus komentarai. |
@@ -72,6 +73,8 @@ Tikroji lentelių struktūra ir Dashboard Exposed schemas dar nepatikrintos.
 | `protocols` | SELECT `id,title,category,content,access_level`, filtras `access_level = public`, rūšiavimas pagal `title`. Neprijungta admin funkcija numato UPDATE `access_level` pagal `id`. |
 | `profiles` | SELECT `id,role` pagal prisijungusio naudotojo ID. Klientas profilių nekuria ir nekeičia. |
 | `app_settings` | SELECT `value` pagal `key` (`home_tile_order`); admin UPSERT. Skaito visi, rašo tik admin. |
+| `announcements` | SELECT pagal `end_date`; admin INSERT ir DELETE. Skaito tik prisijungę. |
+| `duty_schedules` + saugykla `schedules` | SELECT; admin įkelia failą ir INSERT, DELETE. Failai privatūs, atidaromi pasirašyta nuoroda. |
 | `contacts` | SELECT `id,department,name,job_title,phone,email,note,sort_order`, rūšiavimas `sort_order`. Skaito tik prisijungę (`authenticated`); keisti gali tik admin. |
 | `suggestions` | INSERT `title,content,status,user_id,email`; admin SELECT visų stulpelių pagal `created_at`; UPDATE `status,admin_comment,updated_at` pagal `id`. |
 
@@ -88,7 +91,7 @@ node --test tests/stage1.test.cjs
 ```
 
 Šiam rinkiniui pakanka Node.js, papildomų paketų nereikia. Esamo rinkinio
-51 testas praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos). Tai imitaciniai,
+56 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos, 5 kalendoriaus). Tai imitaciniai,
 ne tikro Supabase testai.
 
 ```powershell

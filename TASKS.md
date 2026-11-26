@@ -6,6 +6,19 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Kalendorius (šaka `codex/calendar`, `js/calendar.js`), tik prisijungus:
+  šios dienos skelbimai (svarbūs viršuje, geltoni), artimiausi įvykiai,
+  mėnesio kalendorius su pažymėtomis dienomis, budėjimų grafikai (PDF, PNG,
+  JPG iki 10 MB, atidaromi per 5 min. galiojančią pasirašytą nuorodą).
+  Administratorius prideda ir trina skelbimus bei grafikus. Patikra: 56
+  izoliuoti testai praėjo; vaizdas patikrintas vietinėje naršyklėje su
+  imituotais duomenimis. [ ] Reikia naudotojo SQL: lentelės `announcements`,
+  `duty_schedules` ir privati saugykla `schedules`. Be jo šios versijos
+  skelbti negalima.
+- [x] Sutarta: viena bendra „Dokumentų“ skiltis (dokumentai skaityti ir
+  dokumentai su „Susipažinau“). El. pašto nuoroda atidėta, kol bus žinomas
+  ligoninės pašto adresas.
+
 - [x] Pagrindinis ekranas padalintas į dvi eilutes (šaka `codex/home-groups`):
   viešos skiltys (Algoritmai, Skubios pagalbos kodai, Skaičiuoklės,
   Statistikos pildymas) ir „Prisijungusiems darbuotojams“ (Kontaktai,
