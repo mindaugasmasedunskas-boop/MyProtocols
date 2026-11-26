@@ -216,8 +216,10 @@ function mustChangePassword() {
 }
 
 let passwordChangePending = false;
+let passwordChangeVoluntary = false;
 
 function showPasswordChange() {
+    passwordChangeVoluntary = false;
     document.getElementById("app").innerHTML = `
         <form id="passwordForm" class="login-box" novalidate>
             <h2>Susikurkite naują slaptažodį</h2>
@@ -229,6 +231,40 @@ function showPasswordChange() {
             <div id="passwordMessage" class="message" role="alert"></div>
         </form>
     `;
+    bindPasswordForm();
+}
+
+// "Mano paskyra": the employee sees own details and may change the password.
+// Name, position and departments are managed by the admin.
+function showAccount() {
+    if (!currentUser || authLoading || logoutPending || logoutFailed) return;
+    if (mustChangePassword()) { showPasswordChange(); return; }
+    passwordChangeVoluntary = true;
+    const p = currentProfile || {};
+    const departments = Array.isArray(p.departments) && p.departments.length ? p.departments.join(", ") : "visi";
+    const rows = [
+        ["Vardas ir pavardė", p.full_name || "—"],
+        ["Prisijungimo vardas", p.username || currentUser.email || "—"],
+        ["Pareigos", p.staff_group || "—"],
+        ["Skyriai", departments]
+    ].map(([k, v]) => `<div><strong>${escapeHtml(k)}:</strong> ${escapeHtml(v)}</div>`).join("");
+    document.getElementById("app").innerHTML = `
+        <form id="passwordForm" class="login-box" novalidate>
+            <h2>Mano paskyra</h2>
+            <div class="account-info">${rows}</div>
+            <p class="cal-muted">Duomenis keičia administratorius.</p>
+            <h3>Keisti slaptažodį</h3>
+            <input id="newPassword" type="password" placeholder="Naujas slaptažodis (bent 8 simboliai)" autocomplete="new-password">
+            <input id="newPassword2" type="password" placeholder="Pakartokite slaptažodį" autocomplete="new-password">
+            <button id="passwordButton" type="submit" class="primary">Išsaugoti</button>
+            <button type="button" onclick="showProtocolList()">Grįžti</button>
+            <div id="passwordMessage" class="message" role="alert"></div>
+        </form>
+    `;
+    bindPasswordForm();
+}
+
+function bindPasswordForm() {
     document.getElementById("passwordForm").addEventListener("submit", event => {
         event.preventDefault();
         return changePassword();
@@ -255,7 +291,13 @@ async function changePassword() {
         if (flag.error) throw flag.error;
         if (version !== authVersion) return;
         if (currentProfile) currentProfile.must_change_password = false;
-        showProtocolList();
+        if (passwordChangeVoluntary) {
+            document.getElementById("newPassword").value = "";
+            document.getElementById("newPassword2").value = "";
+            message.textContent = "Slaptažodis pakeistas.";
+        } else {
+            showProtocolList();
+        }
     } catch (error) {
         if (version !== authVersion || document.getElementById("passwordMessage") !== message) return;
         message.textContent = "Nepavyko pakeisti slaptažodžio: " + errorText(error);

@@ -893,3 +893,12 @@ p.calc-info {
     margin: 0;
     flex: none;
 }
+
+.account-info {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+button.user-info {
+    font-size: inherit;
+}

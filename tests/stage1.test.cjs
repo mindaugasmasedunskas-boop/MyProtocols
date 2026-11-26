@@ -1205,6 +1205,32 @@ test('temporary password must be changed before anything else', async () => {
     assert.equal(h.run('isAdmin()'), true);
 });
 
+test('employee opens own account, sees escaped details and changes the password', async () => {
+    const h = harness({ home: true, session, profile: async () => ({ data: { id: user.id, role: 'user', full_name: '<b>Ona</b>', username: 'onaona', staff_group: 'Slaugytojai', departments: ['Priėmimas'], must_change_password: false }, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    h.run('showAccount()');
+    const form = h.document.getElementById('passwordForm');
+    assert.ok(form);
+    assert.match(h.document.getElementById("app").innerHTML, /Mano paskyra/);
+    assert.match(h.document.getElementById("app").innerHTML, /&lt;b&gt;Ona&lt;\/b&gt;/);
+    assert.match(h.document.getElementById("app").innerHTML, /Priėmimas/);
+    h.document.getElementById('newPassword').value = 'naujas123';
+    h.document.getElementById('newPassword2').value = 'naujas123';
+    await form.dispatch('submit');
+    assert.equal(h.calls.userUpdates[0].password, 'naujas123');
+    assert.equal(h.document.getElementById('passwordForm'), form);
+    assert.match(h.document.getElementById('passwordMessage').textContent, /pakeistas/);
+});
+
+test('account view is not available without login', async () => {
+    const h = harness({ home: true });
+    await h.run('startApp()');
+    await h.settle();
+    h.run('showAccount()');
+    assert.equal(h.document.getElementById('passwordForm'), null);
+});
+
 test('admin creates a staff account through the admin-users function', async () => {
     const h = harness({ session, profile: adminProfile, settings: deptSettings, profiles: async () => ({ data: structuredClone(sampleProfiles), error: null }) });
     await h.run('startApp()');
