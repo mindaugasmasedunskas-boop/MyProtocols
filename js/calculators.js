@@ -377,6 +377,7 @@ function renderCalculatorList() {
             const about = document.createElement("span");
             about.className = "calc-info";
             about.textContent = calc.info;
+            card.setAttribute("title", calc.info);
             card.append(name, about);
             card.addEventListener("click", () => { currentCalculator = calc.id; showCalculators(); });
             grid.append(card);
