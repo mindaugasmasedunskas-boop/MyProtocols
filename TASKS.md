@@ -6,6 +6,19 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Personalas (šaka `codex/personnel`): prisijungimas nickname'u
+  (`minmas` → `minmas@vmkl.local`, el. paštas veikia kaip anksčiau);
+  administratoriaus skyrelis „Personalas“ (`js/staff.js`): naujo darbuotojo
+  paskyra su laikinu slaptažodžiu, pareigos, keli skyriai, slaptažodžio
+  atstatymas, pareigų ir skyrių sąrašų redagavimas. Paskyras kuria tik
+  Edge Function `admin-users` (`supabase/functions/admin-users/index.ts`),
+  kuri tikrina, kad kviečia administratorius; service-role raktas lieka
+  Supabase aplinkoje. Pirmą kartą prisijungus privaloma pasikeisti
+  slaptažodį (`must_change_password`, `clear_password_flag()`). Darbuotojo
+  skyriai tampa numatytuoju filtru. Patikra: 78 izoliuoti testai praėjo.
+  Edge Function kodas lokaliai nevykdytas (nėra Deno). [ ] Reikia naudotojo
+  SQL ir funkcijos įdiegimo per Supabase Dashboard.
+
 - [x] Skyrių filtras, 1 ir 2 žingsniai (šaka `codex/departments`,
   `js/departments.js`). Tai patogumo filtras, ne prieigos kontrolė. Skyrių
   sąrašas (`app_settings.departments`) redaguojamas lange „Darbuotojai“.

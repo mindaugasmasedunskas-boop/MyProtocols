@@ -812,3 +812,44 @@ p.calc-info {
 #protocolDepartments {
     margin: 6px 0 10px;
 }
+
+/* Personalas */
+.staff-row {
+    grid-template-columns: minmax(0, 1fr) 220px minmax(0, 1.2fr) 120px;
+}
+
+.staff-departments {
+    font-size: 14px;
+}
+
+.staff-departments .link-button {
+    margin-left: 4px;
+}
+
+.staff-panel {
+    grid-column: 1 / -1;
+    background: #f6f8f9;
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.staff-panel .form-row input[type="text"] {
+    max-width: 320px;
+    margin: 0;
+}
+
+.staff-new {
+    margin-bottom: 16px;
+}
+
+.staff-done {
+    background: #e6f2e9;
+    color: #1f5130;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+}
+
+.staff-groups h4 {
+    margin: 14px 0 6px;
+}

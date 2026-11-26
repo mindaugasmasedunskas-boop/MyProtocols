@@ -57,7 +57,8 @@ async function ensureDepartments() {
             }
         })());
     }
-    if (departmentPrefsUser !== userId) {
+    // Wait for the profile while logging in: it holds the assigned departments.
+    if (departmentPrefsUser !== userId && !(userId && authLoading)) {
         departmentPrefsUser = userId;
         if (!userId) {
             selectedDepartments = readLocalDepartments();
@@ -67,9 +68,11 @@ async function ensureDepartments() {
                     const { data, error } = await supabaseClient.from("user_preferences")
                         .select("departments").eq("user_id", userId).maybeSingle();
                     if (departmentPrefsUser !== userId) return;
-                    selectedDepartments = !error && Array.isArray(data?.departments)
-                        ? data.departments.filter(d => typeof d === "string")
-                        : readLocalDepartments();
+                    // Own saved choice first; otherwise the departments the
+                    // admin assigned to this employee.
+                    const own = !error && Array.isArray(data?.departments) ? data.departments : null;
+                    const assigned = Array.isArray(currentProfile?.departments) ? currentProfile.departments : [];
+                    selectedDepartments = (own ?? assigned).filter(d => typeof d === "string");
                 } catch {
                     if (departmentPrefsUser === userId) selectedDepartments = readLocalDepartments();
                 }

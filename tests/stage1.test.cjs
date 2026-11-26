@@ -68,7 +68,7 @@ function harness(options = {}) {
         getElementById: id => app.all().find(el => el.getAttribute('id') === id) || null,
         createElement: tag => new Element(tag)
     };
-    const calls = { reads: [], copied: [], alerts: [], subscriptions: 0, inserts: [], updates: [], deletes: [], upserts: [], uploads: [], signed: [], removed: [], opened: [] };
+    const calls = { reads: [], copied: [], alerts: [], subscriptions: 0, inserts: [], updates: [], deletes: [], upserts: [], uploads: [], signed: [], removed: [], opened: [], userUpdates: [], rpcs: [], invokes: [] };
     let listener;
     const emit = (event, value) => listener?.(event, value);
     const client = {
@@ -81,7 +81,12 @@ function harness(options = {}) {
             },
             getSession: () => options.getSession?.() || Promise.resolve({ data: { session: options.session || null }, error: null }),
             signInWithPassword: credentials => options.signIn?.(credentials, emit) || Promise.resolve({ data: { user, session }, error: null }),
-            signOut: () => options.signOut?.(emit) || Promise.resolve({ error: null })
+            signOut: () => options.signOut?.(emit) || Promise.resolve({ error: null }),
+            updateUser: value => { calls.userUpdates.push(value); return options.updateUser?.(value) || Promise.resolve({ data: {}, error: null }); }
+        },
+        rpc: name => { calls.rpcs.push(name); return options.rpc?.(name) || Promise.resolve({ data: null, error: null }); },
+        functions: {
+            invoke: (name, opts) => { calls.invokes.push({ name, body: opts?.body }); return options.invoke?.(name, opts) || Promise.resolve({ data: { ok: true }, error: null }); }
         },
         storage: {
             from: bucket => ({
@@ -1061,7 +1066,7 @@ test('non-admin cannot open the staff view', async () => {
     await h.settle();
     await h.run('showStaff()');
     assert.ok(h.document.getElementById('homeGrid'));
-    assert.equal(h.calls.reads.some(q => q.table === 'profiles' && q.columns?.includes('staff_group')), false);
+    assert.equal(h.calls.reads.some(q => q.table === 'profiles' && q.columns?.includes('email')), false);
 });
 
 test('admin assigns a staff group and only staff_group is updated', async () => {
@@ -1077,7 +1082,7 @@ test('admin assigns a staff group and only staff_group is updated', async () => 
     await select.dispatch('change');
     assert.equal(JSON.stringify(h.calls.updates[0].update), JSON.stringify({ staff_group: 'Gydytojai' }));
     assert.deepEqual(h.calls.updates[0].filters, [['id', 'u2']]);
-    assert.equal(rows[1].children[2].textContent, 'Išsaugota');
+    assert.equal(rows[1].children[3].textContent, 'Išsaugota');
 });
 
 test('failed group update restores the previous value', async () => {
@@ -1089,7 +1094,7 @@ test('failed group update restores the previous value', async () => {
     row.children[1].value = 'Gydytojai';
     await row.children[1].dispatch('change');
     assert.equal(row.children[1].value, 'Slaugytojai');
-    assert.match(row.children[2].textContent, /Nepavyko/);
+    assert.match(row.children[3].textContent, /Nepavyko/);
 });
 
 test('admin saves the staff group list', async () => {
@@ -1098,7 +1103,7 @@ test('admin saves the staff group list', async () => {
     await h.settle();
     await h.run('showStaff()');
     h.document.getElementById('staffGroupsInput').value = 'Gydytojai\n Slaugytojai \n\nPadėjėjai\nGydytojai';
-    const save = h.document.getElementById('staffBody').all().find(el => el.textContent === 'Išsaugoti grupes ir skyrius');
+    const save = h.document.getElementById('staffBody').all().find(el => el.textContent === 'Išsaugoti sąrašus');
     await save.dispatch('click');
     assert.equal(h.calls.upserts[0].key, 'staff_groups');
     assert.equal(JSON.stringify(h.calls.upserts[0].value), JSON.stringify(['Gydytojai', 'Slaugytojai', 'Padėjėjai']));
@@ -1162,7 +1167,105 @@ test('staff form shows each list directly under its own heading', async () => {
     await h.run('showStaff()');
     const box = h.document.getElementById('staffBody').children.find(el => el.className.includes('staff-groups'));
     const order = box.children.map(el => el.getAttribute('id') || el.textContent);
-    assert.ok(order.indexOf('Grupių sąrašas') < order.indexOf('staffGroupsInput'));
-    assert.ok(order.indexOf('staffGroupsInput') < order.indexOf('Skyrių sąrašas'));
-    assert.ok(order.indexOf('Skyrių sąrašas') < order.indexOf('departmentsInput'));
+    assert.ok(order.indexOf('Pareigos') < order.indexOf('staffGroupsInput'));
+    assert.ok(order.indexOf('staffGroupsInput') < order.indexOf('Skyriai'));
+    assert.ok(order.indexOf('Skyriai') < order.indexOf('departmentsInput'));
+});
+
+test('login accepts a nickname and maps it to the internal address, email stays as is', async () => {
+    const seen = [];
+    const h = harness({ signIn: async credentials => { seen.push(credentials.email); return { data: { user, session }, error: null }; } });
+    await h.run('startApp()');
+    h.run('showLogin()');
+    h.document.getElementById('email').value = ' MinMas ';
+    h.document.getElementById('password').value = 'test-only';
+    await h.run('login()');
+    assert.equal(seen[0], 'minmas@vmkl.local');
+    assert.equal(h.run('loginEmail("user@example.test")'), 'user@example.test');
+});
+
+test('temporary password must be changed before anything else', async () => {
+    const h = harness({ home: true, session, profile: async () => ({ data: { id: user.id, role: 'admin', must_change_password: true }, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    assert.ok(h.document.getElementById('passwordForm'));
+    assert.equal(h.run('isAdmin()'), false);
+    h.run('currentSection = "protocols"; showProtocolList()');
+    assert.ok(h.document.getElementById('passwordForm'));
+    h.document.getElementById('newPassword').value = 'naujas123';
+    h.document.getElementById('newPassword2').value = 'kitas1234';
+    await h.document.getElementById('passwordForm').dispatch('submit');
+    assert.match(h.document.getElementById('passwordMessage').textContent, /nesutampa/);
+    assert.equal(h.calls.userUpdates.length, 0);
+    h.document.getElementById('newPassword2').value = 'naujas123';
+    await h.document.getElementById('passwordForm').dispatch('submit');
+    assert.equal(h.calls.userUpdates[0].password, 'naujas123');
+    assert.deepEqual(h.calls.rpcs, ['clear_password_flag']);
+    assert.equal(h.document.getElementById('passwordForm'), null);
+    assert.equal(h.run('isAdmin()'), true);
+});
+
+test('admin creates a staff account through the admin-users function', async () => {
+    const h = harness({ session, profile: adminProfile, settings: deptSettings, profiles: async () => ({ data: structuredClone(sampleProfiles), error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showStaff()');
+    await h.document.getElementById('sectionNav').children.find(b => b.textContent === '+ Naujas darbuotojas').dispatch('click');
+    const name = h.document.getElementById('newStaffName');
+    name.value = 'Mindaugas Masedunskas';
+    await name.dispatch('input');
+    assert.equal(h.document.getElementById('newStaffLogin').value, 'minmas');
+    const form = h.document.getElementById('newStaffForm');
+    const create = form.children.find(el => el.textContent === 'Sukurti paskyrą');
+    h.document.getElementById('newStaffPassword').value = 'trumpas';
+    await create.dispatch('click');
+    assert.equal(h.calls.invokes.length, 0);
+    h.document.getElementById('newStaffPassword').value = 'Laikinas123';
+    h.document.getElementById('newStaffGroup').value = 'Gydytojai';
+    h.document.getElementById('newStaffDepartments').all().find(el => el.getAttribute('data-department') === 'Terapinis').checked = true;
+    await create.dispatch('click');
+    const call = h.calls.invokes[0];
+    assert.equal(call.name, 'admin-users');
+    assert.equal(JSON.stringify(call.body), JSON.stringify({ action: 'create', full_name: 'Mindaugas Masedunskas', username: 'minmas', password: 'Laikinas123', staff_group: 'Gydytojai', departments: ['Terapinis'] }));
+    assert.match(h.document.getElementById('staffDone').textContent, /minmas/);
+});
+
+test('admin resets a password and assigns several departments', async () => {
+    const h = harness({ session, profile: adminProfile, settings: deptSettings, profiles: async () => ({ data: structuredClone(sampleProfiles), error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showStaff()');
+    const row = () => h.document.getElementById('staffTable').children[1];
+    await row().children[2].children.find(b => b.textContent === 'Keisti skyrius').dispatch('click');
+    for (const box of row().all().filter(el => el.getAttribute('data-department'))) box.checked = true;
+    await row().all().find(el => el.textContent === 'Išsaugoti skyrius').dispatch('click');
+    assert.equal(JSON.stringify(h.calls.updates[0].update), JSON.stringify({ departments: ['Priėmimo', 'Terapinis'] }));
+    assert.match(row().children[2].children[0].textContent, /Priėmimo, Terapinis/);
+    await row().children[2].children.find(b => b.textContent === 'Atstatyti slaptažodį').dispatch('click');
+    h.document.getElementById('resetPassword-u2').value = 'Naujas12345';
+    await row().all().find(el => el.textContent === 'Nustatyti slaptažodį').dispatch('click');
+    assert.equal(JSON.stringify(h.calls.invokes[0].body), JSON.stringify({ action: 'reset_password', user_id: 'u2', password: 'Naujas12345' }));
+    assert.match(h.document.getElementById('staffDone').textContent, /Slaptažodis pakeistas/);
+});
+
+test('function errors are shown to the admin', async () => {
+    const h = harness({ session, profile: adminProfile, profiles: async () => ({ data: structuredClone(sampleProfiles), error: null }),
+        invoke: async () => ({ data: null, error: { message: 'Edge Function returned a non-2xx status code', context: { json: async () => ({ error: 'Toks prisijungimo vardas jau yra.' }) } } }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showStaff()');
+    h.run('staffCreating = true; renderStaff()');
+    h.document.getElementById('newStaffName').value = 'Jonas Jonaitis';
+    h.document.getElementById('newStaffLogin').value = 'jonjon';
+    h.document.getElementById('newStaffPassword').value = 'Laikinas123';
+    await h.document.getElementById('newStaffForm').children.find(el => el.textContent === 'Sukurti paskyrą').dispatch('click');
+    assert.match(h.document.getElementById('newStaffMessage').textContent, /jau yra/);
+});
+
+test('employee starts with the departments assigned by the admin', async () => {
+    const h = harness({ session, settings: deptSettings, profile: async () => ({ data: { id: user.id, role: 'user', departments: ['Terapinis'] }, error: null }),
+        protocols: async () => ({ data: deptProtocols, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    assert.deepEqual(listedTitles(h), ['Bendras', 'Terapijai']);
 });
