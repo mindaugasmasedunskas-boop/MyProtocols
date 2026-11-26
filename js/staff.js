@@ -108,12 +108,14 @@ function renderStaff() {
     message.className = "message";
     message.setAttribute("id", "staffGroupsMessage");
     save.addEventListener("click", () => saveStaffGroups(area, message));
+    box.append(area);
     appendText(box, "h3", "", "Skyrių sąrašas");
     appendText(box, "p", "cal-muted", "Po vieną skyrių eilutėje. Pagal skyrius filtruojami algoritmai.");
     const departmentsArea = document.createElement("textarea");
     departmentsArea.setAttribute("id", "departmentsInput");
+    departmentsArea.setAttribute("placeholder", "Priėmimo\nTerapinis\nChirurginis");
     departmentsArea.value = departmentsList.join("\n");
-    box.append(area, departmentsArea, save, message);
+    box.append(departmentsArea, save, message);
     body.append(box);
 }
 
