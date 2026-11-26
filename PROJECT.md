@@ -36,7 +36,8 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | `js/calendar.js` | Kalendorius (tik prisijungus): skelbimai pagal datas, mėnesio vaizdas, budėjimų grafikų įkėlimas ir atidarymas. |
 | `js/calculators.js` | 19 medicininių skaičiuoklių (tik naršyklėje, be duomenų siuntimo). |
 | `js/documents.js` | Dokumentų biblioteka (tik prisijungus): sąrašas, kategorijos, paieška, admin įkėlimas ir trynimas. |
-| `js/staff.js` | Administratoriui: darbuotojų sąrašas ir grupių priskyrimas. |
+| `js/staff.js` | Administratoriaus skyrelis „Personalas“: paskyrų kūrimas, pareigos, skyriai, slaptažodžio atstatymas, sąrašai. |
+| `supabase/functions/admin-users/index.ts` | Edge Function: paskyrų kūrimas ir slaptažodžių atstatymas (tik admin). Įdiegiama per Supabase Dashboard. |
 | `js/departments.js` | Skyrių filtras: sąrašas, pasirinkimas viršuje, įsiminimas (`user_preferences` arba naršyklė). |
 | `js/contacts.js` | Kontaktų knyga (tik prisijungus): užklausa, paieška, grupavimas, `tel:`/`mailto:` nuorodos. |
 | `js/suggestions.js` | Prisijungusio naudotojo pasiūlymo forma ir siuntimas. |
@@ -96,7 +97,7 @@ node --test tests/stage1.test.cjs
 ```
 
 Šiam rinkiniui pakanka Node.js, papildomų paketų nereikia. Esamo rinkinio
-72 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos, 5 kalendoriaus, 3 skaičiuoklių, 5 dokumentų, 4 darbuotojų grupių, 4 skyrių filtro). Tai imitaciniai,
+78 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos, 5 kalendoriaus, 3 skaičiuoklių, 5 dokumentų, 4 darbuotojų grupių, 4 skyrių filtro, 6 personalo ir prisijungimo). Tai imitaciniai,
 ne tikro Supabase testai.
 
 ```powershell

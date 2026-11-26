@@ -9,13 +9,23 @@ let loginPending = false;
 let logoutPending = false;
 let logoutFailed = false;
 
+// Staff log in with a nickname ("minmas"); Supabase needs an email, so a
+// nickname maps to an internal address. Must match the admin-users function.
+const LOGIN_DOMAIN = "vmkl.local";
+
+function loginEmail(value) {
+    const text = String(value || "").trim();
+    if (!text) return "";
+    return text.includes("@") ? text : `${text.toLowerCase()}@${LOGIN_DOMAIN}`;
+}
+
 function showLogin() {
     if (logoutPending || logoutFailed) return;
 
     document.getElementById("app").innerHTML = `
         <form id="loginForm" class="login-box" novalidate>
             <h2>Prisijungimas</h2>
-            <input id="email" type="email" placeholder="El. paštas" autocomplete="username">
+            <input id="email" type="text" placeholder="Prisijungimo vardas arba el. paštas" autocomplete="username" autocapitalize="none" spellcheck="false">
             <input id="password" type="password" placeholder="Slaptažodis" autocomplete="current-password">
             <button id="loginButton" type="submit" class="primary">Prisijungti</button>
             <button type="button" onclick="showProtocolList()">Atšaukti</button>
@@ -37,10 +47,10 @@ async function login() {
     const button = document.getElementById("loginButton");
     if (!emailInput || !passwordInput || !message) return;
 
-    const email = emailInput.value.trim();
+    const email = loginEmail(emailInput.value);
     const password = passwordInput.value;
     if (!email || !password) {
-        message.textContent = "Įveskite el. paštą ir slaptažodį.";
+        message.textContent = "Įveskite prisijungimo vardą ir slaptažodį.";
         return;
     }
 
@@ -183,7 +193,7 @@ async function loadProfile(user = currentUser, version = authVersion) {
     try {
         const { data, error } = await supabaseClient
             .from("profiles")
-            .select("id,role")
+            .select("id,role,full_name,username,staff_group,departments,must_change_password")
             .eq("id", user.id)
             .maybeSingle();
         if (error) throw error;
@@ -199,7 +209,63 @@ async function loadProfile(user = currentUser, version = authVersion) {
     }
 }
 
+// A temporary password set by an admin must be replaced before anything else.
+function mustChangePassword() {
+    return Boolean(currentUser && !authLoading && !logoutPending && !logoutFailed &&
+        currentProfile?.must_change_password);
+}
+
+let passwordChangePending = false;
+
+function showPasswordChange() {
+    document.getElementById("app").innerHTML = `
+        <form id="passwordForm" class="login-box" novalidate>
+            <h2>Susikurkite naują slaptažodį</h2>
+            <p>Prisijungėte laikinu slaptažodžiu. Prieš tęsdami susikurkite savo slaptažodį (bent 8 simboliai).</p>
+            <input id="newPassword" type="password" placeholder="Naujas slaptažodis" autocomplete="new-password">
+            <input id="newPassword2" type="password" placeholder="Pakartokite slaptažodį" autocomplete="new-password">
+            <button id="passwordButton" type="submit" class="primary">Išsaugoti</button>
+            <button type="button" onclick="logout()">Atsijungti</button>
+            <div id="passwordMessage" class="message" role="alert"></div>
+        </form>
+    `;
+    document.getElementById("passwordForm").addEventListener("submit", event => {
+        event.preventDefault();
+        return changePassword();
+    });
+}
+
+async function changePassword() {
+    if (passwordChangePending || !currentUser) return;
+    const message = document.getElementById("passwordMessage");
+    const button = document.getElementById("passwordButton");
+    const first = document.getElementById("newPassword").value;
+    const second = document.getElementById("newPassword2").value;
+    if (first.length < 8) { message.textContent = "Slaptažodis turi būti bent 8 simbolių."; return; }
+    if (first !== second) { message.textContent = "Slaptažodžiai nesutampa."; return; }
+
+    passwordChangePending = true;
+    if (button) button.disabled = true;
+    message.textContent = "Saugoma...";
+    const version = authVersion;
+    try {
+        const { error } = await supabaseClient.auth.updateUser({ password: first });
+        if (error) throw error;
+        const flag = await supabaseClient.rpc("clear_password_flag");
+        if (flag.error) throw flag.error;
+        if (version !== authVersion) return;
+        if (currentProfile) currentProfile.must_change_password = false;
+        showProtocolList();
+    } catch (error) {
+        if (version !== authVersion || document.getElementById("passwordMessage") !== message) return;
+        message.textContent = "Nepavyko pakeisti slaptažodžio: " + errorText(error);
+    } finally {
+        passwordChangePending = false;
+        if (button) button.disabled = false;
+    }
+}
+
 function isAdmin() {
     return Boolean(!authLoading && !logoutPending && !logoutFailed &&
-        currentUser && currentProfile?.role === "admin");
+        currentUser && currentProfile?.role === "admin" && !currentProfile?.must_change_password);
 }

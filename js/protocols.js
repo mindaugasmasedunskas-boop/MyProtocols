@@ -225,7 +225,7 @@ function userButtonsHtml() {
         </button>`;
     } else if (currentUser) {
         userArea = `
-            <span class="user-info">${escapeHtml(currentUser.email || "")}${isAdmin() ? " (admin)" : ""}</span>
+            <span class="user-info">${escapeHtml(currentProfile?.full_name || currentProfile?.username || currentUser.email || "")}${isAdmin() ? " (admin)" : ""}</span>
             <button onclick="logout()">Atsijungti</button>
         `;
     } else {
@@ -238,10 +238,10 @@ function adminAreaHtml() {
     return isAdmin() ? `
         <div class="admin-box">
             <strong>Administratoriaus režimas</strong>
-            <div style="margin-top:8px;">Galite peržiūrėti pasiūlymus ir tvarkyti darbuotojų grupes ir skyrius.</div>
+            <div style="margin-top:8px;">Galite peržiūrėti pasiūlymus ir tvarkyti personalą.</div>
             <div class="admin-actions">
                 <button class="primary" onclick="showAdminSuggestions()">Gauti siūlymai</button>
-                <button onclick="showStaff()">Darbuotojai / skyriai</button>
+                <button onclick="showStaff()">Personalas</button>
             </div>
         </div>
     ` : "";
@@ -250,6 +250,10 @@ function adminAreaHtml() {
 // Main view router. Auth refreshes and "back" buttons call this, so the
 // user stays in the section they opened.
 function showProtocolList() {
+    if (mustChangePassword()) {
+        showPasswordChange();
+        return;
+    }
     if (currentSection === "home") {
         showHome();
         return;
@@ -271,6 +275,10 @@ function showProtocolList() {
         return;
     }
     if (currentSection === "staff") {
+        showStaff();
+        return;
+    }
+    if (currentSection === "personnel") {
         showStaff();
         return;
     }
