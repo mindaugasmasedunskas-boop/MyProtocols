@@ -259,6 +259,10 @@ function showProtocolList() {
         showCalculators();
         return;
     }
+    if (currentSection === "documents") {
+        showDocuments();
+        return;
+    }
     if (COMING_SOON[currentSection]) {
         showComingSoon(currentSection);
         return;

@@ -6,6 +6,19 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Dokumentų biblioteka, 1 etapas (šaka `codex/documents-library`,
+  `js/documents.js`), tik prisijungus: sąrašas, kategorijos, paieška,
+  atidarymas per 5 min. pasirašytą nuorodą. Administratorius įkelia PDF,
+  Word, Excel (iki 20 MB) ir trina; failo SHA-256 saugomas 2 etapui.
+  Nepavykus įrašyti eilutės, įkeltas failas pašalinamas. Patikra: 64
+  izoliuoti testai praėjo; vaizdas patikrintas naršyklėje su imituotais
+  duomenimis. [ ] Reikia naudotojo SQL: lentelė `documents` ir privati
+  saugykla `documents`. Be jo šios versijos skelbti negalima.
+- [ ] Dokumentai, 2 etapas: „Susipažinau“ (kas, kada, kuri failo versija;
+  nekeičiamas žurnalas), priminimas, vadovybės vaizdas. Reikia asmeninių
+  darbuotojų paskyrų.
+- [ ] Dokumentai, 3 etapas: gavėjai (visi, skyrius, konkretūs žmonės).
+
 - [x] Skaičiuoklės (šaka `codex/calculators`, `js/calculators.js`), viešos,
   skaičiuojama tik naršyklėje, duomenys niekur nesiunčiami. 19 skaičiuoklių:
   Cockcroft-Gault, CKD-EPI 2021, koreguotas kalcis, Na pokytis

@@ -714,3 +714,36 @@ p.calc-info {
     font-size: 13px;
     padding: 6px 10px;
 }
+
+/* Dokumentų biblioteka */
+#documentList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+#documentList > :not(.document-card) {
+    grid-column: 1 / -1;
+}
+
+#documentList .document-card {
+    margin: 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #e1e6ea;
+    box-shadow: none;
+}
+
+#documentList .document-card:hover {
+    border-color: #587386;
+}
+
+#documentList .document-card .category {
+    font-size: 12px;
+}
+
+#documentList .document-card h2 {
+    margin: 3px 0;
+    font-size: 16px;
+    line-height: 1.3;
+}

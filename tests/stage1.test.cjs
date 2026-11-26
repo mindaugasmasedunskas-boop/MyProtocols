@@ -113,6 +113,7 @@ function harness(options = {}) {
                 order() {
                     calls.reads.push(query);
                     if (table === 'protocols') return options.protocols?.(query) || Promise.resolve({ data: [publicProtocol], error: null });
+                    if (table === 'documents') return options.documents?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'announcements') return options.announcements?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'duty_schedules') return options.schedules?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'contacts') return options.contacts?.(query) || Promise.resolve({ data: [], error: null });
@@ -148,7 +149,7 @@ function harness(options = {}) {
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
-    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'admin', 'admin-protocols', 'suggestions']) {
+    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'documents', 'admin', 'admin-protocols', 'suggestions']) {
         vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'js', file + '.js'), 'utf8'), context, { filename: file + '.js' });
     }
     // Most tests exercise the protocol list; home-screen tests set this back.
@@ -966,4 +967,83 @@ test('every calculator explains what it is for, in the list and in the form', as
     assert.match(card.children[1].textContent, /gyvybinius rodiklius/);
     await card.dispatch('click');
     assert.match(h.document.getElementById('calcInfo').textContent, /gyvybinius rodiklius/);
+});
+
+const sampleDocuments = [
+    { id: 1, title: 'Slaugytojo pareigybinė instrukcija', category: 'Pareigybinės instrukcijos', file_path: '2026/1.pdf', file_name: 'slauga.pdf', created_at: '2026-11-20T10:00:00Z' },
+    { id: 2, title: 'Infekcijų kontrolės tvarka', category: 'Tvarkos', file_path: '2026/2.pdf', file_name: 'infekcijos.pdf', created_at: '2026-11-21T10:00:00Z' }
+];
+
+test('guest cannot open documents', async () => {
+    const h = harness({ home: true });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showDocuments()');
+    assert.ok(h.document.getElementById('homeGrid'));
+    assert.equal(h.calls.reads.some(q => q.table === 'documents'), false);
+});
+
+test('documents tile is no longer marked as coming soon', async () => {
+    const h = harness({ home: true, session });
+    await h.run('startApp()');
+    await h.settle();
+    const tile = h.document.getElementById('homeGridLogin').children.find(t => t.getAttribute('data-section') === 'documents');
+    assert.equal(tile.children.some(el => el.textContent === 'Ruošiama'), false);
+});
+
+test('documents are listed, filtered by category and search, and open by signed link', async () => {
+    const h = harness({ session, documents: async () => ({ data: sampleDocuments, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showDocuments()');
+    const titles = () => h.document.getElementById('documentList').children
+        .filter(c => c.className.includes('document-card')).map(c => c.children[1].textContent);
+    assert.equal(titles().length, 2);
+    const tvarkos = h.document.getElementById('documentCategories').children.find(b => b.textContent === 'Tvarkos');
+    await tvarkos.dispatch('click');
+    assert.deepEqual(titles(), ['Infekcijų kontrolės tvarka']);
+    h.run('documentCategory = "Visi"');
+    h.document.getElementById('documentSearch').value = 'PAREIGYBINE';
+    h.run('renderDocuments()');
+    assert.deepEqual(titles(), ['Slaugytojo pareigybinė instrukcija']);
+    await h.run('openDocument(documentsList[0])');
+    assert.deepEqual(h.calls.signed, ['2026/1.pdf']);
+    assert.equal(h.calls.opened[0].opener, null);
+    assert.equal(h.document.getElementById('sectionNav').children.some(b => b.textContent === '+ Įkelti dokumentą'), false);
+});
+
+test('admin uploads a document, wrong types are rejected and the row stores the file', async () => {
+    const h = harness({ session, profile: adminProfile });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showDocuments()');
+    h.run('showDocumentForm()');
+    const fileInput = h.document.getElementById('documentFile');
+    fileInput.files = [{ name: 'virusas.exe', type: 'application/x-msdownload', size: 10 }];
+    await h.document.getElementById('documentForm').dispatch('submit');
+    assert.equal(h.calls.uploads.length, 0);
+    fileInput.files = [{ name: 'Tvarka 2026.pdf', type: 'application/pdf', size: 1000 }];
+    await fileInput.dispatch('change');
+    assert.equal(h.document.getElementById('documentTitle').value, 'Tvarka 2026');
+    h.document.getElementById('documentCategory').value = 'Tvarkos';
+    await h.document.getElementById('documentForm').dispatch('submit');
+    assert.equal(h.calls.uploads[0].bucket, 'documents');
+    assert.match(h.calls.uploads[0].path, /^\d{4}\/\d+\.pdf$/);
+    const row = h.calls.inserts[0];
+    assert.equal(row.table, 'documents');
+    assert.equal(row.title, 'Tvarka 2026');
+    assert.equal(row.category, 'Tvarkos');
+    assert.equal(row.file_name, 'Tvarka 2026.pdf');
+});
+
+test('failed document row insert removes the uploaded file', async () => {
+    const h = harness({ session, profile: adminProfile, insert: async () => ({ data: [], error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    h.run('showDocumentForm()');
+    h.document.getElementById('documentFile').files = [{ name: 'a.pdf', type: 'application/pdf', size: 10 }];
+    h.document.getElementById('documentTitle').value = 'A';
+    await h.document.getElementById('documentForm').dispatch('submit');
+    assert.equal(h.calls.removed.length, 1);
+    assert.match(h.document.getElementById('documentMessage').textContent, /Nepavyko įkelti/);
 });
