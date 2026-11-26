@@ -661,3 +661,21 @@
     background: #fbe3e1;
     color: #7a1f1a;
 }
+
+.calc-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.calc-info {
+    font-size: 13px;
+    font-weight: 400;
+    color: #666;
+    line-height: 1.35;
+}
+
+p.calc-info {
+    font-size: 15px;
+    margin: -4px 0 12px;
+}

@@ -957,3 +957,13 @@ test('calculators open from home without login and update the result while typin
     await h.document.getElementById('calc-weight').dispatch('input');
     assert.equal(h.document.getElementById('calcValue').textContent, '61 ml/min');
 });
+
+test('every calculator explains what it is for, in the list and in the form', async () => {
+    const h = harness();
+    assert.equal(h.run('CALCULATORS.every(c => typeof c.info === "string" && c.info.length > 20)'), true);
+    h.run('currentSection = "calculators"; currentCalculator = null; showCalculators()');
+    const card = h.document.getElementById('calcBody').all().find(el => el.getAttribute('data-calc') === 'news2');
+    assert.match(card.children[1].textContent, /gyvybinius rodiklius/);
+    await card.dispatch('click');
+    assert.match(h.document.getElementById('calcInfo').textContent, /gyvybinius rodiklius/);
+});

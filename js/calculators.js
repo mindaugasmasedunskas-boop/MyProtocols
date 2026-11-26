@@ -27,6 +27,7 @@ const CALCULATORS = [
     // ---------- Inkstai ir skysčiai ----------
     {
         id: "cockcroft", group: CALC_GROUPS[0], title: "Kreatinino klirensas (Cockcroft-Gault)",
+        info: "Inkstų funkcijos įvertinimas vaistų dozėms parinkti (antibiotikai, antikoaguliantai, metforminas).",
         inputs: [num("age", "Amžius", "m."), num("weight", "Svoris", "kg"), sex, num("creat", "Kreatininas", "µmol/l")],
         compute(v) {
             if (!needNumbers(v, ["age", "weight", "creat"]) || v.creat <= 0) return null;
@@ -41,6 +42,7 @@ const CALCULATORS = [
     },
     {
         id: "ckdepi", group: CALC_GROUPS[0], title: "GFG (CKD-EPI 2021)",
+        info: "Lėtinės inkstų ligos stadijai nustatyti pagal kreatininą.",
         inputs: [num("age", "Amžius", "m."), sex, num("creat", "Kreatininas", "µmol/l")],
         compute(v) {
             if (!needNumbers(v, ["age", "creat"]) || v.creat <= 0) return null;
@@ -55,6 +57,7 @@ const CALCULATORS = [
     },
     {
         id: "calcium", group: CALC_GROUPS[0], title: "Koreguotas kalcis",
+        info: "Tikrasis kalcio lygis, kai albuminas sumažėjęs ar padidėjęs.",
         inputs: [num("ca", "Bendras kalcis", "mmol/l"), num("alb", "Albuminas", "g/l")],
         compute(v) {
             if (!needNumbers(v, ["ca", "alb"])) return null;
@@ -68,6 +71,7 @@ const CALCULATORS = [
     },
     {
         id: "sodium", group: CALC_GROUPS[0], title: "Natrio pokytis nuo 1 l tirpalo (Adrogué-Madias)",
+        info: "Kiek pakis natris nuo 1 l pasirinkto tirpalo: saugiai koreguoti hipo- ar hipernatremiją.",
         inputs: [
             num("na", "Natris serume", "mmol/l"), num("weight", "Svoris", "kg"),
             sel("tbw", "Paciento grupė", [["0.6", "Vyras <65 m."], ["0.5", "Moteris <65 m. arba vyras ≥65 m."], ["0.45", "Moteris ≥65 m."]]),
@@ -86,6 +90,7 @@ const CALCULATORS = [
     },
     {
         id: "osmol", group: CALC_GROUPS[0], title: "Apskaičiuotas osmoliariškumas",
+        info: "Hiperosmolinės būklės, apsinuodijimo (alkoholiai) ar hiponatremijos priežasčių vertinimui.",
         inputs: [num("na", "Natris", "mmol/l"), num("glu", "Gliukozė", "mmol/l"), num("urea", "Šlapalas", "mmol/l")],
         compute(v) {
             if (!needNumbers(v, ["na", "glu", "urea"])) return null;
@@ -95,6 +100,7 @@ const CALCULATORS = [
     },
     {
         id: "aniongap", group: CALC_GROUPS[0], title: "Anijonų tarpas",
+        info: "Metabolinės acidozės priežasčiai nustatyti (laktatas, ketonai, toksinai, inkstai).",
         inputs: [num("na", "Natris", "mmol/l"), num("cl", "Chloridai", "mmol/l"), num("hco3", "Bikarbonatai", "mmol/l"), num("alb", "Albuminas (nebūtina)", "g/l", { optional: true })],
         compute(v) {
             if (!needNumbers(v, ["na", "cl", "hco3"])) return null;
@@ -112,6 +118,7 @@ const CALCULATORS = [
     // ---------- Širdis ir krešėjimas ----------
     {
         id: "chadsvasc", group: CALC_GROUPS[1], title: "CHA₂DS₂-VASc",
+        info: "Insulto rizika esant prieširdžių virpėjimui: ar skirti antikoaguliantus.",
         inputs: [
             yesNo("chf", "Širdies nepakankamumas"), yesNo("htn", "Arterinė hipertenzija"),
             sel("age", "Amžius", [["0", "<65 m."], ["1", "65–74 m."], ["2", "≥75 m."]]),
@@ -127,6 +134,7 @@ const CALCULATORS = [
     },
     {
         id: "hasbled", group: CALC_GROUPS[1], title: "HAS-BLED",
+        info: "Kraujavimo rizika vartojant antikoaguliantus: kuriuos rizikos veiksnius koreguoti.",
         inputs: [
             yesNo("h", "Hipertenzija (SAKS >160)"), yesNo("renal", "Inkstų funkcijos sutrikimas"), yesNo("liver", "Kepenų funkcijos sutrikimas"),
             yesNo("stroke", "Insultas anamnezėje"), yesNo("bleed", "Kraujavimas ar polinkis kraujuoti"), yesNo("inr", "Nestabilus INR"),
@@ -139,6 +147,7 @@ const CALCULATORS = [
     },
     {
         id: "heart", group: CALC_GROUPS[1], title: "HEART balas (krūtinės skausmas)",
+        info: "Krūtinės skausmo pacientų rizika: ar galima saugiai išleisti.",
         inputs: [
             sel("h", "Anamnezė", [["0", "Mažai įtartina"], ["1", "Vidutiniškai įtartina"], ["2", "Labai įtartina"]]),
             sel("e", "EKG", [["0", "Normali"], ["1", "Nespecifiniai repoliarizacijos pakitimai"], ["2", "Reikšminga ST depresija"]]),
@@ -157,6 +166,7 @@ const CALCULATORS = [
     },
     {
         id: "wells", group: CALC_GROUPS[1], title: "Wells (plaučių embolija)",
+        info: "Plaučių embolijos tikimybė: D-dimerai ar iš karto KT angiografija.",
         inputs: [
             yesNo("dvt", "Klinikiniai GVT požymiai", 3), yesNo("likely", "PATE labiausiai tikėtina diagnozė", 3),
             yesNo("hr", "ŠSD >100 k./min.", 1.5), yesNo("immob", "Imobilizacija ≥3 d. ar operacija per 4 sav.", 1.5),
@@ -173,6 +183,7 @@ const CALCULATORS = [
     },
     {
         id: "perc", group: CALC_GROUPS[1], title: "PERC (plaučių embolijos atmetimas)",
+        info: "Mažos tikimybės pacientams: ar galima atmesti PATE be D-dimerų.",
         inputs: [
             yesNo("age", "Amžius ≥50 m."), yesNo("hr", "ŠSD ≥100 k./min."), yesNo("spo2", "SpO₂ <95 %"),
             yesNo("leg", "Vienos kojos patinimas"), yesNo("hemo", "Kraujo atkosėjimas"), yesNo("surg", "Operacija ar trauma per 4 sav."),
@@ -189,6 +200,7 @@ const CALCULATORS = [
     },
     {
         id: "qtc", group: CALC_GROUPS[1], title: "Koreguotas QT (QTc)",
+        info: "QT intervalas pagal ritmo dažnį: aritmijų rizika ir vaistų, ilginančių QT, saugumas.",
         inputs: [num("qt", "QT intervalas", "ms"), num("hr", "Širdies susitraukimų dažnis", "k./min."), sex],
         compute(v) {
             if (!needNumbers(v, ["qt", "hr"]) || v.hr <= 0) return null;
@@ -209,6 +221,7 @@ const CALCULATORS = [
     // ---------- Infekcijos ir būklės sunkumas ----------
     {
         id: "qsofa", group: CALC_GROUPS[2], title: "qSOFA",
+        info: "Greitas sepsio ir blogos baigties rizikos įvertinimas prie lovos.",
         inputs: [yesNo("rr", "Kvėpavimo dažnis ≥22/min."), yesNo("mental", "Sąmonės pakitimai"), yesNo("sbp", "SAKS ≤100 mmHg")],
         compute(v) {
             const s = sumPoints(this.inputs, v);
@@ -217,6 +230,7 @@ const CALCULATORS = [
     },
     {
         id: "news2", group: CALC_GROUPS[2], title: "NEWS2",
+        info: "Būklės sunkumo ir blogėjimo rizika pagal gyvybinius rodiklius: kaip skubiai vertinti.",
         inputs: [
             num("rr", "Kvėpavimo dažnis", "/min."), num("spo2", "SpO₂", "%"), yesNo("o2", "Skiriamas deguonis", 2),
             num("temp", "Temperatūra", "°C"), num("sbp", "Sistolinis AKS", "mmHg"), num("hr", "Pulsas", "k./min."),
@@ -246,6 +260,7 @@ const CALCULATORS = [
     },
     {
         id: "curb65", group: CALC_GROUPS[2], title: "CURB-65 (pneumonija)",
+        info: "Pneumonijos sunkumas: gydyti ambulatoriškai, ligoninėje ar intensyviojoje terapijoje.",
         inputs: [yesNo("c", "Sumišimas"), yesNo("u", "Šlapalas >7 mmol/l"), yesNo("r", "Kvėpavimo dažnis ≥30/min."), yesNo("b", "SAKS <90 arba DAKS ≤60 mmHg"), yesNo("age", "Amžius ≥65 m.")],
         compute(v) {
             const s = sumPoints(this.inputs, v);
@@ -260,6 +275,7 @@ const CALCULATORS = [
     // ---------- Kita ----------
     {
         id: "gbs", group: CALC_GROUPS[3], title: "Glasgow-Blatchford (kraujavimas iš VT)",
+        info: "Kraujavimo iš viršutinio VT rizika: ar galima gydyti ambulatoriškai, ar reikia endoskopijos.",
         inputs: [
             num("urea", "Šlapalas", "mmol/l"), num("hb", "Hemoglobinas", "g/l"), sex, num("sbp", "Sistolinis AKS", "mmHg"),
             yesNo("hr", "Pulsas ≥100 k./min."), yesNo("melena", "Melena"), yesNo("syncope", "Sinkopė", 2),
@@ -282,6 +298,7 @@ const CALCULATORS = [
     },
     {
         id: "gcs", group: CALC_GROUPS[3], title: "Glasgow komos skalė",
+        info: "Sąmonės sutrikimo gylis: būklės stebėjimui ir kvėpavimo takų apsaugos sprendimui.",
         inputs: [
             sel("e", "Akių atmerkimas", [["4", "Savaime (4)"], ["3", "Į balsą (3)"], ["2", "Į skausmą (2)"], ["1", "Neatmerkia (1)"]]),
             sel("v", "Kalba", [["5", "Orientuota (5)"], ["4", "Sumišusi (4)"], ["3", "Netinkami žodžiai (3)"], ["2", "Nesuprantami garsai (2)"], ["1", "Nėra (1)"]]),
@@ -298,6 +315,7 @@ const CALCULATORS = [
     },
     {
         id: "bmi", group: CALC_GROUPS[3], title: "KMI ir kūno paviršiaus plotas",
+        info: "Kūno masės indeksas ir kūno paviršiaus plotas (kai kurių vaistų dozėms).",
         inputs: [num("weight", "Svoris", "kg"), num("height", "Ūgis", "cm")],
         compute(v) {
             if (!needNumbers(v, ["weight", "height"]) || v.height <= 0) return null;
@@ -312,6 +330,7 @@ const CALCULATORS = [
     },
     {
         id: "dose", group: CALC_GROUPS[3], title: "Vaisto dozė pagal svorį",
+        info: "Vaisto dozė mg pagal svorį ir tūris ml pagal koncentraciją.",
         inputs: [num("weight", "Svoris", "kg"), num("perkg", "Dozė", "mg/kg"), num("conc", "Koncentracija (nebūtina)", "mg/ml", { optional: true })],
         compute(v) {
             if (!needNumbers(v, ["weight", "perkg"])) return null;
@@ -352,7 +371,13 @@ function renderCalculatorList() {
             const card = document.createElement("button");
             card.className = "protocol calc-card";
             card.setAttribute("data-calc", calc.id);
-            card.textContent = calc.title;
+            const name = document.createElement("span");
+            name.className = "calc-name";
+            name.textContent = calc.title;
+            const about = document.createElement("span");
+            about.className = "calc-info";
+            about.textContent = calc.info;
+            card.append(name, about);
             card.addEventListener("click", () => { currentCalculator = calc.id; showCalculators(); });
             grid.append(card);
         }
@@ -400,7 +425,11 @@ function renderCalculator(calc) {
     const title = document.createElement("h2");
     title.setAttribute("id", "calcTitle");
     title.textContent = calc.title;
-    form.append(title);
+    const about = document.createElement("p");
+    about.className = "calc-info";
+    about.setAttribute("id", "calcInfo");
+    about.textContent = calc.info;
+    form.append(title, about);
 
     for (const input of calc.inputs) {
         const row = document.createElement("label");
