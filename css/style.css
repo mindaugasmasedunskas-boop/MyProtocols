@@ -679,3 +679,38 @@ p.calc-info {
     font-size: 15px;
     margin: -4px 0 12px;
 }
+
+/* Kompaktiškas skaičiuoklių sąrašas: visos telpa viename ekrane */
+.calc-grid {
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 8px;
+}
+
+#calcBody .contact-group {
+    margin: 14px 0 6px;
+    font-size: 16px;
+}
+
+.calc-card {
+    padding: 8px 10px;
+    gap: 2px;
+    border-radius: 8px;
+}
+
+.calc-name {
+    font-size: 14px;
+    line-height: 1.25;
+}
+
+.calc-card .calc-info {
+    font-size: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.calc-warning {
+    font-size: 13px;
+    padding: 6px 10px;
+}
