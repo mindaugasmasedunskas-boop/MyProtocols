@@ -15,6 +15,7 @@ function renderSectionNav() {
     button.textContent = "← Pradžia";
     button.addEventListener("click", () => { currentSection = "home"; showProtocolList(); });
     nav.append(button);
+    renderDepartmentPicker();
 }
 
 // Fixed order of algorithm categories. Unknown categories come after these
@@ -73,7 +74,7 @@ async function loadProtocols() {
     try {
         const { data, error } = await supabaseClient
             .from("protocols")
-            .select("id,title,category,content,access_level,sort_order")
+            .select("id,title,category,content,access_level,sort_order,departments")
             .eq("access_level", "public")
             .order("title");
         if (error) throw error;
@@ -126,7 +127,7 @@ function renderProtocols() {
     const reordering = Array.isArray(protocolReorder);
     const search = reordering ? "" : normalizeSearchText(document.getElementById("searchInput")?.value.trim() || "");
     const filtered = protocols.filter(protocol => {
-        if (!canReadProtocol(protocol)) return false;
+        if (!canReadProtocol(protocol) || !matchesDepartments(protocol)) return false;
         const categoryMatch = currentCategory === "Visi" || protocol.category === currentCategory;
         const text = normalizeSearchText(`${protocol.title || ""} ${protocol.category || ""} ${protocol.content || ""}`);
         return categoryMatch && (!search || text.includes(search));
@@ -146,7 +147,8 @@ function renderProtocols() {
         card.setAttribute("role", "button");
         const category = document.createElement("div");
         category.className = "category";
-        category.textContent = protocol.category || "";
+        const tags = Array.isArray(protocol.departments) ? protocol.departments : [];
+        category.textContent = (protocol.category || "") + (tags.length ? " · " + tags.join(", ") : "");
         const title = document.createElement("h2");
         title.textContent = protocol.title || "";
         card.append(category, title);
@@ -212,6 +214,10 @@ function authErrorHtml() {
 }
 
 function userAreaHtml() {
+    return '<span id="departmentPicker" class="department-picker"></span>' + userButtonsHtml();
+}
+
+function userButtonsHtml() {
     let userArea;
     if (logoutPending || logoutFailed) {
         userArea = `<button onclick="logout()" ${logoutPending ? "disabled" : ""}>
@@ -273,7 +279,7 @@ function showProtocolList() {
         return;
     }
     const app = document.getElementById("app");
-    const categories = ["Visi", ...[...new Set(protocols.filter(canReadProtocol).map(p => p.category).filter(Boolean))]
+    const categories = ["Visi", ...[...new Set(protocols.filter(p => canReadProtocol(p) && matchesDepartments(p)).map(p => p.category).filter(Boolean))]
         .sort(compareCategories)];
     if (!categories.includes(currentCategory)) currentCategory = "Visi";
     const userArea = userAreaHtml();

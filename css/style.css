@@ -783,3 +783,30 @@ p.calc-info {
 .staff-groups textarea {
     min-height: 120px;
 }
+
+/* Skyrių filtras */
+.department-picker {
+    position: relative;
+    margin-right: auto;
+}
+
+.department-panel {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    z-index: 20;
+    min-width: 260px;
+    padding: 12px 14px;
+    background: white;
+    border: 1px solid #d5dde2;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+.department-panel button {
+    margin: 8px 8px 0 0;
+}
+
+#protocolDepartments {
+    margin: 6px 0 10px;
+}

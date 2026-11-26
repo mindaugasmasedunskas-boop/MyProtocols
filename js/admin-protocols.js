@@ -6,6 +6,7 @@
 // "public": restricted rows are readable by nobody until auditor rights exist.
 
 let protocolSavePending = false;
+let protocolDepartmentsValue = () => [];
 
 function showProtocolForm(id = null) {
     if (!isAdmin()) {
@@ -29,6 +30,7 @@ function showProtocolForm(id = null) {
             <input id="protocolCategory" type="text" placeholder="Kategorija (pvz., Kardiologija)" list="protocolCategories">
             <datalist id="protocolCategories"></datalist>
             <textarea id="protocolContent" placeholder="Algoritmo tekstas"></textarea>
+            <div id="protocolDepartments"></div>
             <button id="protocolSaveButton" type="submit" class="primary">Išsaugoti</button>
             <div id="protocolFormMessage" class="message" role="alert"></div>
         </form>
@@ -37,6 +39,8 @@ function showProtocolForm(id = null) {
     document.getElementById("protocolTitle").value = protocol?.title || "";
     document.getElementById("protocolCategory").value = protocol?.category || "";
     document.getElementById("protocolContent").value = protocol?.content || "";
+    protocolDepartmentsValue = departmentCheckboxes(document.getElementById("protocolDepartments"),
+        Array.isArray(protocol?.departments) ? protocol.departments : []);
     const list = document.getElementById("protocolCategories");
     for (const category of categories) {
         const option = document.createElement("option");
@@ -58,7 +62,8 @@ async function saveProtocol(id) {
     const values = {
         title: document.getElementById("protocolTitle").value.trim(),
         category: document.getElementById("protocolCategory").value.trim(),
-        content: document.getElementById("protocolContent").value.trim()
+        content: document.getElementById("protocolContent").value.trim(),
+        departments: protocolDepartmentsValue()
     };
     if (!values.title) {
         message.textContent = "Įrašykite pavadinimą.";

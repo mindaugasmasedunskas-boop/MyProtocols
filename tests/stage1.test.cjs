@@ -123,6 +123,7 @@ function harness(options = {}) {
                 maybeSingle() {
                     calls.reads.push(query);
                     if (table === 'app_settings') return options.settings?.(query) || Promise.resolve({ data: null, error: null });
+                    if (table === 'user_preferences') return options.prefs?.(query) || Promise.resolve({ data: null, error: null });
                     return options.profile?.(query) || Promise.resolve({ data: { id: user.id, role: 'user' }, error: null });
                 },
                 insert(value) {
@@ -150,7 +151,7 @@ function harness(options = {}) {
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
-    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'documents', 'staff', 'admin', 'admin-protocols', 'suggestions']) {
+    for (const file of ['utils', 'departments', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'documents', 'staff', 'admin', 'admin-protocols', 'suggestions']) {
         vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'js', file + '.js'), 'utf8'), context, { filename: file + '.js' });
     }
     // Most tests exercise the protocol list; home-screen tests set this back.
@@ -727,7 +728,7 @@ test('admin adds an algorithm as public and the form validates required fields',
     h.document.getElementById('protocolCategory').value = 'Grupė';
     h.document.getElementById('protocolContent').value = 'Tekstas';
     await h.document.getElementById('protocolForm').dispatch('submit');
-    assert.deepEqual(h.calls.inserts[0], { table: 'protocols', title: 'Naujas', category: 'Grupė', content: 'Tekstas', access_level: 'public' });
+    assert.equal(JSON.stringify(h.calls.inserts[0]), JSON.stringify({ table: 'protocols', title: 'Naujas', category: 'Grupė', content: 'Tekstas', departments: [], access_level: 'public' }));
 });
 
 test('admin edit that changes no rows shows an error, not success', async () => {
@@ -1097,8 +1098,59 @@ test('admin saves the staff group list', async () => {
     await h.settle();
     await h.run('showStaff()');
     h.document.getElementById('staffGroupsInput').value = 'Gydytojai\n Slaugytojai \n\nPadėjėjai\nGydytojai';
-    const save = h.document.getElementById('staffBody').all().find(el => el.textContent === 'Išsaugoti grupes');
+    const save = h.document.getElementById('staffBody').all().find(el => el.textContent === 'Išsaugoti grupes ir skyrius');
     await save.dispatch('click');
     assert.equal(h.calls.upserts[0].key, 'staff_groups');
     assert.equal(JSON.stringify(h.calls.upserts[0].value), JSON.stringify(['Gydytojai', 'Slaugytojai', 'Padėjėjai']));
+});
+
+const deptSettings = async query => query.filters.some(f => f[1] === 'departments')
+    ? { data: { value: ['Priėmimo', 'Terapinis'] }, error: null }
+    : { data: null, error: null };
+const deptProtocols = [
+    { id: 'd1', title: 'Bendras', category: 'Kitos', content: 'x', access_level: 'public', sort_order: 0, departments: [] },
+    { id: 'd2', title: 'Priėmimui', category: 'Kitos', content: 'x', access_level: 'public', sort_order: 0, departments: ['Priėmimo'] },
+    { id: 'd3', title: 'Terapijai', category: 'Kitos', content: 'x', access_level: 'public', sort_order: 0, departments: ['Terapinis'] }
+];
+const listedTitles = h => h.document.getElementById('protocolList').children.map(c => c.children[1].textContent);
+
+test('department filter hides other departments but always shows common algorithms', async () => {
+    const h = harness({ settings: deptSettings, protocols: async () => ({ data: deptProtocols, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    assert.deepEqual(listedTitles(h), ['Bendras', 'Priėmimui', 'Terapijai']);
+    await h.document.getElementById('departmentToggle').dispatch('click');
+    const panel = h.document.getElementById('departmentPanel');
+    panel.all().find(el => el.getAttribute('data-department') === 'Terapinis').checked = true;
+    await panel.children.find(el => el.textContent === 'Rodyti').dispatch('click');
+    assert.deepEqual(listedTitles(h), ['Bendras', 'Terapijai']);
+    assert.match(h.document.getElementById('departmentToggle').textContent, /Terapinis/);
+    await h.document.getElementById('departmentToggle').dispatch('click');
+    await h.document.getElementById('departmentPanel').children.find(el => el.textContent === 'Visi skyriai').dispatch('click');
+    assert.equal(listedTitles(h).length, 3);
+});
+
+test('logged-in user starts with saved departments and a new choice is stored', async () => {
+    const h = harness({ session, settings: deptSettings, prefs: async () => ({ data: { departments: ['Priėmimo'] }, error: null }),
+        protocols: async () => ({ data: deptProtocols, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    assert.deepEqual(listedTitles(h), ['Bendras', 'Priėmimui']);
+    await h.run('saveDepartmentChoice(["Terapinis"])');
+    const saved = h.calls.upserts.find(u => u.table === 'user_preferences');
+    assert.equal(saved.user_id, user.id);
+    assert.equal(JSON.stringify(saved.departments), JSON.stringify(['Terapinis']));
+    assert.deepEqual(listedTitles(h), ['Bendras', 'Terapijai']);
+});
+
+test('admin tags an algorithm with departments', async () => {
+    const h = harness({ session, profile: adminProfile, settings: deptSettings });
+    await h.run('startApp()');
+    await h.settle();
+    h.run('showProtocolForm()');
+    h.document.getElementById('protocolTitle').value = 'Naujas';
+    h.document.getElementById('protocolContent').value = 'Tekstas';
+    h.document.getElementById('protocolDepartments').all().find(el => el.getAttribute('data-department') === 'Priėmimo').checked = true;
+    await h.document.getElementById('protocolForm').dispatch('submit');
+    assert.equal(JSON.stringify(h.calls.inserts[0].departments), JSON.stringify(['Priėmimo']));
 });

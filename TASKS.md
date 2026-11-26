@@ -6,6 +6,16 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Skyrių filtras, 1 ir 2 žingsniai (šaka `codex/departments`,
+  `js/departments.js`). Tai patogumo filtras, ne prieigos kontrolė. Skyrių
+  sąrašas (`app_settings.departments`) redaguojamas lange „Darbuotojai“.
+  Viršuje rodomas pasirinkimas „Skyrius: …“ (vienas, keli ar visi):
+  prisijungus saugomas `user_preferences`, neprisijungus naršyklėje.
+  Algoritmai žymimi skyriais (`protocols.departments`, tuščias = visiems).
+  Patikra: 71 izoliuotas testas praėjo; vaizdas patikrintas naršyklėje.
+  [ ] Reikia naudotojo SQL. [ ] 3 žingsnis: dokumentai, skelbimai,
+  kontaktai.
+
 - [x] Darbuotojų grupės (šaka `codex/staff-groups`, `js/staff.js`):
   administratoriaus langas „Darbuotojai“ (mygtukas administratoriaus bloke).
   Visų naudotojų sąrašas, grupės priskyrimas (`profiles.staff_group`),
