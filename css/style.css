@@ -853,3 +853,43 @@ p.calc-info {
 .staff-groups h4 {
     margin: 14px 0 6px;
 }
+
+/* Staff form: captions above fields and a compact department checklist. */
+.field-label {
+    display: block;
+    font-weight: 600;
+    margin: 6px 0 4px;
+}
+.staff-new select {
+    width: 100%;
+    max-width: 420px;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 14px;
+}
+.staff-new .form-row input[type="text"] {
+    margin: 0;
+}
+#newStaffDepartments,
+.staff-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    column-gap: 16px;
+}
+#newStaffDepartments > .cal-muted,
+.staff-panel > :not(label) {
+    grid-column: 1 / -1;
+}
+#newStaffDepartments label.form-row,
+.staff-panel label.form-row {
+    justify-content: flex-start;
+    margin: 4px 0;
+    cursor: pointer;
+}
+.suggestion-box input[type="checkbox"],
+.staff-panel input[type="checkbox"] {
+    width: auto;
+    padding: 0;
+    margin: 0;
+    flex: none;
+}

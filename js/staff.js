@@ -316,7 +316,19 @@ function newStaffForm() {
         renderStaff();
     });
     save.addEventListener("click", () => createStaff(read, message));
-    form.append(name, login, passwordField("newStaffPassword"), group, departments, save, cancel, message);
+    const caption = (text, forId) => {
+        const label = document.createElement("label");
+        label.className = "field-label";
+        label.setAttribute("for", forId);
+        label.textContent = text;
+        return label;
+    };
+    form.append(
+        caption("Vardas ir pavardė", "newStaffName"), name,
+        caption("Prisijungimo vardas (siūlomas automatiškai)", "newStaffLogin"), login,
+        caption("Laikinas slaptažodis", "newStaffPassword"), passwordField("newStaffPassword"),
+        caption("Pareigos", "newStaffGroup"), group,
+        departments, save, cancel, message);
     return form;
 }
 
