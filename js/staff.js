@@ -46,7 +46,7 @@ async function showStaff() {
         <div class="topbar">${userAreaHtml()}</div>
         ${authErrorHtml()}
         <nav class="sections" id="sectionNav"></nav>
-        <h2>Darbuotojai</h2>
+        <h2>Darbuotojai ir skyriai</h2>
         <div id="staffBody"><div class="empty" role="status">Kraunama...</div></div>
     `;
     renderSectionNav();

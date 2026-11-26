@@ -238,10 +238,10 @@ function adminAreaHtml() {
     return isAdmin() ? `
         <div class="admin-box">
             <strong>Administratoriaus režimas</strong>
-            <div style="margin-top:8px;">Galite peržiūrėti pasiūlymus ir tvarkyti darbuotojų grupes.</div>
+            <div style="margin-top:8px;">Galite peržiūrėti pasiūlymus ir tvarkyti darbuotojų grupes ir skyrius.</div>
             <div class="admin-actions">
                 <button class="primary" onclick="showAdminSuggestions()">Gauti siūlymai</button>
-                <button onclick="showStaff()">Darbuotojai</button>
+                <button onclick="showStaff()">Darbuotojai / skyriai</button>
             </div>
         </div>
     ` : "";
