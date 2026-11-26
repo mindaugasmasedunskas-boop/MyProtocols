@@ -225,7 +225,7 @@ function userButtonsHtml() {
         </button>`;
     } else if (currentUser) {
         userArea = `
-            <span class="user-info">${escapeHtml(currentProfile?.full_name || currentProfile?.username || currentUser.email || "")}${isAdmin() ? " (admin)" : ""}</span>
+            <button class="link-button user-info" onclick="showAccount()" title="Mano paskyra">${escapeHtml(currentProfile?.full_name || currentProfile?.username || currentUser.email || "")}${isAdmin() ? " (admin)" : ""}</button>
             <button onclick="logout()">Atsijungti</button>
         `;
     } else {
