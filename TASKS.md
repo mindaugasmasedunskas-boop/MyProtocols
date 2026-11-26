@@ -6,6 +6,16 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Darbuotojų grupės (šaka `codex/staff-groups`, `js/staff.js`):
+  administratoriaus langas „Darbuotojai“ (mygtukas administratoriaus bloke).
+  Visų naudotojų sąrašas, grupės priskyrimas (`profiles.staff_group`),
+  grupių sąrašo redagavimas (`app_settings.staff_groups`). Rolės keisti
+  negalima. Patikra: 68 izoliuoti testai praėjo; vaizdas patikrintas
+  naršyklėje. [ ] Reikia naudotojo SQL: `staff_group` stulpelis,
+  `public.is_admin()` (SECURITY DEFINER), admin skaitymo politika, UPDATE
+  teisė tik `staff_group` ir `full_name` stulpeliams.
+- [ ] Atostogų pageidavimai: limitai pagal grupę, kalendorius, tvirtinimas.
+
 - [x] Dokumentų biblioteka, 1 etapas (šaka `codex/documents-library`,
   `js/documents.js`), tik prisijungus: sąrašas, kategorijos, paieška,
   atidarymas per 5 min. pasirašytą nuorodą. Administratorius įkelia PDF,

@@ -113,6 +113,7 @@ function harness(options = {}) {
                 order() {
                     calls.reads.push(query);
                     if (table === 'protocols') return options.protocols?.(query) || Promise.resolve({ data: [publicProtocol], error: null });
+                    if (table === 'profiles') return options.profiles?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'documents') return options.documents?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'announcements') return options.announcements?.(query) || Promise.resolve({ data: [], error: null });
                     if (table === 'duty_schedules') return options.schedules?.(query) || Promise.resolve({ data: [], error: null });
@@ -149,7 +150,7 @@ function harness(options = {}) {
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
-    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'documents', 'admin', 'admin-protocols', 'suggestions']) {
+    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'documents', 'staff', 'admin', 'admin-protocols', 'suggestions']) {
         vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'js', file + '.js'), 'utf8'), context, { filename: file + '.js' });
     }
     // Most tests exercise the protocol list; home-screen tests set this back.
@@ -1046,4 +1047,58 @@ test('failed document row insert removes the uploaded file', async () => {
     await h.document.getElementById('documentForm').dispatch('submit');
     assert.equal(h.calls.removed.length, 1);
     assert.match(h.document.getElementById('documentMessage').textContent, /Nepavyko įkelti/);
+});
+
+const sampleProfiles = [
+    { id: 'u1', email: 'admin@example.test', full_name: 'Admin', role: 'admin', staff_group: null },
+    { id: 'u2', email: 'ona@example.test', full_name: 'Ona Onaitė', role: 'user', staff_group: 'Slaugytojai' }
+];
+
+test('non-admin cannot open the staff view', async () => {
+    const h = harness({ home: true, session });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showStaff()');
+    assert.ok(h.document.getElementById('homeGrid'));
+    assert.equal(h.calls.reads.some(q => q.table === 'profiles' && q.columns?.includes('staff_group')), false);
+});
+
+test('admin assigns a staff group and only staff_group is updated', async () => {
+    const h = harness({ session, profile: adminProfile, profiles: async () => ({ data: structuredClone(sampleProfiles), error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showStaff()');
+    const rows = h.document.getElementById('staffTable').children;
+    assert.equal(rows.length, 2);
+    const select = rows[1].children[1];
+    assert.equal(select.value, 'Slaugytojai');
+    select.value = 'Gydytojai';
+    await select.dispatch('change');
+    assert.equal(JSON.stringify(h.calls.updates[0].update), JSON.stringify({ staff_group: 'Gydytojai' }));
+    assert.deepEqual(h.calls.updates[0].filters, [['id', 'u2']]);
+    assert.equal(rows[1].children[2].textContent, 'Išsaugota');
+});
+
+test('failed group update restores the previous value', async () => {
+    const h = harness({ session, profile: adminProfile, profiles: async () => ({ data: structuredClone(sampleProfiles), error: null }), update: async () => ({ data: [], error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showStaff()');
+    const row = h.document.getElementById('staffTable').children[1];
+    row.children[1].value = 'Gydytojai';
+    await row.children[1].dispatch('change');
+    assert.equal(row.children[1].value, 'Slaugytojai');
+    assert.match(row.children[2].textContent, /Nepavyko/);
+});
+
+test('admin saves the staff group list', async () => {
+    const h = harness({ session, profile: adminProfile, profiles: async () => ({ data: structuredClone(sampleProfiles), error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showStaff()');
+    h.document.getElementById('staffGroupsInput').value = 'Gydytojai\n Slaugytojai \n\nPadėjėjai\nGydytojai';
+    const save = h.document.getElementById('staffBody').all().find(el => el.textContent === 'Išsaugoti grupes');
+    await save.dispatch('click');
+    assert.equal(h.calls.upserts[0].key, 'staff_groups');
+    assert.equal(JSON.stringify(h.calls.upserts[0].value), JSON.stringify(['Gydytojai', 'Slaugytojai', 'Padėjėjai']));
 });
