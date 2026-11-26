@@ -948,3 +948,17 @@ button.user-info {
 .triage-list > li { margin: 5px 0; line-height: 1.4; }
 .triage-sub { list-style: none; padding-left: 10px; margin: 4px 0; }
 .triage-source { margin-top: 10px; }
+
+/* Document acknowledgement */
+.ack-badge { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 12px; font-size: 14px; font-weight: 600; }
+.ack-badge.pending { background: #fdebd9; color: #8a3d00; }
+.ack-badge.done { background: #e2f1e3; color: #1d5a21; }
+.ack-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; background: #fdebd9; color: #6b3000; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-weight: 600; }
+.ack-check { justify-content: flex-start; margin: 14px 0; font-size: 17px; }
+.ack-check input[type="checkbox"] { width: 22px; height: 22px; }
+.ack-done { color: #1d5a21; font-weight: 600; }
+.document-tools { display: flex; gap: 14px; margin-top: 6px; }
+.ack-summary { font-weight: 600; }
+.ack-row { display: grid; grid-template-columns: 1.5fr 1fr 1.3fr; gap: 10px; padding: 8px 10px; border-left: 4px solid #c9a227; background: #fff; border-radius: 6px; margin-bottom: 6px; }
+.ack-row.done { border-left-color: #2e7d4f; }
+#documentAudience label.form-row { justify-content: flex-start; margin: 4px 0; }
