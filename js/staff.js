@@ -103,12 +103,17 @@ function renderStaff() {
     area.value = (staffGroups || []).join("\n");
     const save = document.createElement("button");
     save.className = "primary";
-    save.textContent = "Išsaugoti grupes";
+    save.textContent = "Išsaugoti grupes ir skyrius";
     const message = document.createElement("div");
     message.className = "message";
     message.setAttribute("id", "staffGroupsMessage");
     save.addEventListener("click", () => saveStaffGroups(area, message));
-    box.append(area, save, message);
+    appendText(box, "h3", "", "Skyrių sąrašas");
+    appendText(box, "p", "cal-muted", "Po vieną skyrių eilutėje. Pagal skyrius filtruojami algoritmai.");
+    const departmentsArea = document.createElement("textarea");
+    departmentsArea.setAttribute("id", "departmentsInput");
+    departmentsArea.value = departmentsList.join("\n");
+    box.append(area, departmentsArea, save, message);
     body.append(box);
 }
 
@@ -150,6 +155,18 @@ async function saveStaffGroups(area, message) {
         ({ data, error } = await supabaseClient.from("app_settings")
             .upsert({ key: "staff_groups", value: groups, updated_at: new Date().toISOString() })
             .select("key"));
+        if (!error && Array.isArray(data) && data.length) {
+            const departments = [...new Set(String(document.getElementById("departmentsInput")?.value || "")
+                .split("\n").map(d => d.trim()).filter(Boolean))].slice(0, 50);
+            const saved = await supabaseClient.from("app_settings")
+                .upsert({ key: "departments", value: departments, updated_at: new Date().toISOString() })
+                .select("key");
+            if (saved.error || !Array.isArray(saved.data) || !saved.data.length) error = saved.error || new Error("neturite teisės.");
+            else {
+                departmentsList = departments;
+                departmentsLoaded = true;
+            }
+        }
     } catch (requestError) {
         error = requestError;
     }
@@ -159,5 +176,5 @@ async function saveStaffGroups(area, message) {
     }
     staffGroups = groups;
     renderStaff();
-    document.getElementById("staffGroupsMessage").textContent = "Grupės išsaugotos.";
+    document.getElementById("staffGroupsMessage").textContent = "Grupės ir skyriai išsaugoti.";
 }

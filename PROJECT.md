@@ -37,6 +37,7 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | `js/calculators.js` | 19 medicininių skaičiuoklių (tik naršyklėje, be duomenų siuntimo). |
 | `js/documents.js` | Dokumentų biblioteka (tik prisijungus): sąrašas, kategorijos, paieška, admin įkėlimas ir trynimas. |
 | `js/staff.js` | Administratoriui: darbuotojų sąrašas ir grupių priskyrimas. |
+| `js/departments.js` | Skyrių filtras: sąrašas, pasirinkimas viršuje, įsiminimas (`user_preferences` arba naršyklė). |
 | `js/contacts.js` | Kontaktų knyga (tik prisijungus): užklausa, paieška, grupavimas, `tel:`/`mailto:` nuorodos. |
 | `js/suggestions.js` | Prisijungusio naudotojo pasiūlymo forma ir siuntimas. |
 | `js/admin.js` | Pasiūlymų sąrašas, būsenos ir administratoriaus komentarai. |
@@ -95,7 +96,7 @@ node --test tests/stage1.test.cjs
 ```
 
 Šiam rinkiniui pakanka Node.js, papildomų paketų nereikia. Esamo rinkinio
-68 testai praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos, 5 kalendoriaus, 3 skaičiuoklių, 5 dokumentų, 4 darbuotojų grupių). Tai imitaciniai,
+71 testas praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos, 5 kalendoriaus, 3 skaičiuoklių, 5 dokumentų, 4 darbuotojų grupių, 3 skyrių filtro). Tai imitaciniai,
 ne tikro Supabase testai.
 
 ```powershell

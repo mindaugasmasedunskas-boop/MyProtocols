@@ -112,6 +112,7 @@ function showHome() {
         <h3 class="home-group">Prisijungusiems darbuotojams</h3>
         <div class="home-grid" id="homeGridLogin"></div>
     `;
+    renderDepartmentPicker();
     if (!isAdmin()) homeReorder = null;
     if (isAdmin()) {
         const tools = document.getElementById("homeTools");
