@@ -553,8 +553,8 @@ const sampleContacts = [
     { id: 1, department: 'Administracija', name: '<img src=x onerror=alert(1)>', job_title: '', phone: 'javascript:alert(1)', email: 'x@y" onclick="z', note: 'Pastaba', sort_order: 0 }
 ];
 
-test('contacts load for a guest, are grouped by department and searchable', async () => {
-    const h = harness({ contacts: async () => ({ data: sampleContacts, error: null }) });
+test('contacts load for a logged-in user, are grouped by department and searchable', async () => {
+    const h = harness({ session, contacts: async () => ({ data: sampleContacts, error: null }) });
     await h.run('startApp()');
     await h.run('showContacts()');
     assert.ok(h.calls.reads.some(q => q.table === 'contacts'));
@@ -567,7 +567,7 @@ test('contacts load for a guest, are grouped by department and searchable', asyn
 });
 
 test('contact links accept only safe tel/mailto values and text is not parsed as HTML', async () => {
-    const h = harness({ contacts: async () => ({ data: sampleContacts, error: null }) });
+    const h = harness({ session, contacts: async () => ({ data: sampleContacts, error: null }) });
     await h.run('startApp()');
     await h.run('showContacts()');
     const links = h.document.getElementById('contactList').all().filter(el => el.className === 'contact-link');
@@ -577,10 +577,11 @@ test('contact links accept only safe tel/mailto values and text is not parsed as
 });
 
 test('auth refresh keeps the user in the contacts section', async () => {
-    const h = harness({ contacts: async () => ({ data: sampleContacts, error: null }) });
+    const h = harness({ session, contacts: async () => ({ data: sampleContacts, error: null }) });
     await h.run('startApp()');
+    await h.settle();
     await h.run('showContacts()');
-    h.emit('TOKEN_REFRESHED', null);
+    h.emit('TOKEN_REFRESHED', session);
     await h.settle();
     assert.ok(h.document.getElementById('contactList'));
     assert.equal(h.document.getElementById('protocolList'), null);
@@ -591,8 +592,23 @@ test('contacts section shows a failed logout error instead of hiding it', async 
     await h.run('startApp()');
     await h.run('showContacts()');
     await h.run('logout()');
-    assert.ok(h.document.getElementById('contactList'));
+    // Logged out: contacts are closed, the error stays visible on the home screen.
+    assert.equal(h.document.getElementById('contactList'), null);
     assert.match(h.app.innerHTML, /Atsijungti nepavyko/);
+});
+
+test('guest cannot open contacts and cached contacts are dropped on logout', async () => {
+    const h = harness({ home: true, session, contacts: async () => ({ data: sampleContacts, error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showContacts()');
+    assert.equal(h.run('contacts.length'), 2);
+    await h.run('logout()');
+    await h.settle();
+    await h.run('showContacts()');
+    assert.equal(h.document.getElementById('contactList'), null);
+    assert.ok(h.document.getElementById('homeGrid'));
+    assert.equal(h.run('contacts.length'), 0);
 });
 
 test('admin save with zero changed rows does not report success', async () => {
@@ -630,17 +646,21 @@ test('home screen shows section tiles and locks login-only sections for guests',
     const h = harness({ home: true });
     await h.run('startApp()');
     await h.settle();
-    const tiles = h.document.getElementById('homeGrid').children;
-    assert.equal(tiles.length, 7);
-    const locked = tiles.filter(tile => tile.className.includes('locked')).map(tile => tile.getAttribute('data-section'));
-    assert.deepEqual(locked, ['suggestions', 'documents']);
+    const first = h.document.getElementById('homeGrid').children.map(t => t.getAttribute('data-section'));
+    const second = h.document.getElementById('homeGridLogin').children;
+    assert.deepEqual(first, ['protocols', 'codes', 'calculators', 'statistics']);
+    assert.deepEqual(second.map(t => t.getAttribute('data-section')), ['contacts', 'suggestions', 'documents']);
+    assert.ok(second.every(t => t.className.includes('locked')));
+    await second[0].dispatch('click');
+    assert.ok(h.document.getElementById('loginForm'));
 });
 
 test('home tiles open sections and the back button returns home', async () => {
-    const h = harness({ home: true, contacts: async () => ({ data: [], error: null }) });
+    const h = harness({ home: true, session, contacts: async () => ({ data: [], error: null }) });
     await h.run('startApp()');
     await h.settle();
-    const tile = key => h.document.getElementById('homeGrid').children.find(el => el.getAttribute('data-section') === key);
+    const tile = key => [...h.document.getElementById('homeGrid').children, ...h.document.getElementById('homeGridLogin').children]
+        .find(el => el.getAttribute('data-section') === key);
     await tile('codes').dispatch('click');
     assert.equal(h.document.getElementById('comingSoonTitle').textContent, 'Skubios pagalbos kodai');
     await h.document.getElementById('sectionNav').children[0].dispatch('click');
@@ -740,13 +760,15 @@ test('home tiles use the saved order and admin can drag and save a new order', a
     const h = harness({ home: true, session, profile: adminProfile, settings: async () => ({ data: { value: saved }, error: null }) });
     await h.run('startApp()');
     await h.settle();
-    const keys = () => h.document.getElementById('homeGrid').children.map(t => t.getAttribute('data-section'));
-    assert.deepEqual(keys().slice(0, 3), ['contacts', 'protocols', 'codes']);
+    const keys = id => h.document.getElementById(id).children.map(t => t.getAttribute('data-section'));
+    assert.deepEqual(keys('homeGrid').slice(0, 2), ['protocols', 'codes']);
+    assert.deepEqual(keys('homeGridLogin'), ['contacts', 'suggestions', 'documents']);
     await h.document.getElementById('homeTools').children[0].dispatch('click');
-    const tile = key => h.document.getElementById('homeGrid').children.find(t => t.getAttribute('data-section') === key);
+    const tile = key => [...h.document.getElementById('homeGrid').children, ...h.document.getElementById('homeGridLogin').children]
+        .find(t => t.getAttribute('data-section') === key);
     await tile('documents').dispatch('dragstart');
     await tile('contacts').dispatch('drop');
-    assert.equal(keys()[0], 'documents');
+    assert.equal(keys('homeGridLogin')[0], 'documents');
     const bar = h.document.getElementById('homeTools').children[0];
     await bar.children[1].dispatch('click');
     assert.equal(h.calls.upserts[0].key, 'home_tile_order');

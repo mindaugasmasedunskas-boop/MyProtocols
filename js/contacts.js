@@ -43,6 +43,16 @@ async function loadContacts() {
 }
 
 async function showContacts() {
+    // Contacts are for logged-in staff only; forget cached rows on logout.
+    if (!currentUser || authLoading || logoutPending || logoutFailed) {
+        contacts = [];
+        contactsLoaded = false;
+        if (!currentUser) {
+            currentSection = "home";
+            showHome();
+            return;
+        }
+    }
     currentSection = "contacts";
     const app = document.getElementById("app");
     app.innerHTML = `

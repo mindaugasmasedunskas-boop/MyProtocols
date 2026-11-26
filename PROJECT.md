@@ -33,7 +33,7 @@ Naudotojui matomas produkto pavadinimas yra MyProtocols: `index.html`
 | `js/auth.js` | Sesija, prisijungimas, atsijungimas, profilis, admin patikra. |
 | `js/protocols.js` | Užklausa, vieša prieiga, kategorijos, paieška, peržiūra, kopijavimas. |
 | `js/home.js` | Pagrindinis ekranas: skilčių mygtukai, „Ruošiama“ vaizdas, skilčių atidarymas. |
-| `js/contacts.js` | Vieša kontaktų knyga: užklausa, paieška, grupavimas, `tel:`/`mailto:` nuorodos. |
+| `js/contacts.js` | Kontaktų knyga (tik prisijungus): užklausa, paieška, grupavimas, `tel:`/`mailto:` nuorodos. |
 | `js/suggestions.js` | Prisijungusio naudotojo pasiūlymo forma ir siuntimas. |
 | `js/admin.js` | Pasiūlymų sąrašas, būsenos ir administratoriaus komentarai. |
 | `js/admin-protocols.js` | Administratoriaus algoritmų pridėjimas, redagavimas ir trynimas (nauji įrašai visada `public`). |
@@ -72,7 +72,7 @@ Tikroji lentelių struktūra ir Dashboard Exposed schemas dar nepatikrintos.
 | `protocols` | SELECT `id,title,category,content,access_level`, filtras `access_level = public`, rūšiavimas pagal `title`. Neprijungta admin funkcija numato UPDATE `access_level` pagal `id`. |
 | `profiles` | SELECT `id,role` pagal prisijungusio naudotojo ID. Klientas profilių nekuria ir nekeičia. |
 | `app_settings` | SELECT `value` pagal `key` (`home_tile_order`); admin UPSERT. Skaito visi, rašo tik admin. |
-| `contacts` | SELECT `id,department,name,job_title,phone,email,note,sort_order`, rūšiavimas `sort_order`. Vieša (anon) skaitymo lentelė; keisti gali tik admin. |
+| `contacts` | SELECT `id,department,name,job_title,phone,email,note,sort_order`, rūšiavimas `sort_order`. Skaito tik prisijungę (`authenticated`); keisti gali tik admin. |
 | `suggestions` | INSERT `title,content,status,user_id,email`; admin SELECT visų stulpelių pagal `created_at`; UPDATE `status,admin_comment,updated_at` pagal `id`. |
 
 Kode naudojami laukai neįrodo jų tipų, apribojimų ar serverio privilegijų.
@@ -88,7 +88,7 @@ node --test tests/stage1.test.cjs
 ```
 
 Šiam rinkiniui pakanka Node.js, papildomų paketų nereikia. Esamo rinkinio
-50 testų praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo). Tai imitaciniai,
+51 testas praėjo (28 iš 1 etapo, 3 greitųjų pataisymų, 1 PWA, 3 kontaktų, 3 audito pataisymų, 3 pagrindinio ekrano, 4 algoritmų administravimo, 1 kategorijų tvarkos, 4 tvarkos keitimo, 1 kontaktų prieigos). Tai imitaciniai,
 ne tikro Supabase testai.
 
 ```powershell

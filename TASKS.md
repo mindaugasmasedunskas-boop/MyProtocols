@@ -6,6 +6,15 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Pagrindinis ekranas padalintas į dvi eilutes (šaka `codex/home-groups`):
+  viešos skiltys (Algoritmai, Skubios pagalbos kodai, Skaičiuoklės,
+  Statistikos pildymas) ir „Prisijungusiems darbuotojams“ (Kontaktai,
+  Pasiūlymai, Dokumentai). Neprisijungus jos pilkos, paspaudus atsidaro
+  prisijungimas. Kontaktai programoje tik prisijungus; atsijungus kontaktai
+  pašalinami iš atminties. Patikra: 51 izoliuotas testas praėjo.
+  [ ] Serverio pusė: `contacts` skaitymą apriboti `authenticated` rolei
+  (SQL pateiktas naudotojui).
+
 - [x] Administratoriaus tvarkos keitimas tempiant (šaka `codex/admin-reorder`):
   pagrindinio ekrano mygtukai („Keisti mygtukų tvarką“, saugoma
   `app_settings.home_tile_order`) ir algoritmai pasirinktoje kategorijoje
