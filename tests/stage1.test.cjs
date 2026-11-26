@@ -148,7 +148,7 @@ function harness(options = {}) {
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
-    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'admin', 'admin-protocols', 'suggestions']) {
+    for (const file of ['utils', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'admin', 'admin-protocols', 'suggestions']) {
         vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'js', file + '.js'), 'utf8'), context, { filename: file + '.js' });
     }
     // Most tests exercise the protocol list; home-screen tests set this back.
@@ -909,4 +909,51 @@ test('admin uploads a schedule file and wrong file types are rejected', async ()
     assert.equal(h.calls.inserts[0].table, 'duty_schedules');
     assert.equal(h.calls.inserts[0].title, 'Gruodis 2026');
     assert.equal(h.calls.inserts[0].month, '2026-12-01');
+});
+
+test('calculator formulas give reference values', async () => {
+    const h = harness();
+    const calc = (id, v) => h.run(`CALCULATORS.find(c => c.id === ${JSON.stringify(id)}).compute(${JSON.stringify(v)})`);
+    assert.equal(calc('cockcroft', { age: 70, weight: 70, sex: 'm', creat: 100 }).value, '60 ml/min');
+    assert.equal(calc('cockcroft', { age: 70, weight: 70, sex: 'f', creat: 100 }).value, '51 ml/min');
+    assert.equal(calc('ckdepi', { age: 60, sex: 'm', creat: 100 }).value, '74 ml/min/1,73 m²');
+    assert.equal(calc('ckdepi', { age: 50, sex: 'f', creat: 70 }).value, '91 ml/min/1,73 m²');
+    assert.equal(calc('calcium', { ca: 2.0, alb: 30 }).value, '2,2 mmol/l');
+    assert.equal(calc('sodium', { na: 120, weight: 70, tbw: '0.6', fluid: '513' }).value, '+9,1 mmol/l nuo 1 l');
+    assert.equal(calc('osmol', { na: 140, glu: 5, urea: 5 }).value, '290 mOsm/l');
+    assert.equal(calc('aniongap', { na: 140, cl: 100, hco3: 24, alb: 20 }).value, '16 mmol/l, koreguotas 21');
+    assert.equal(calc('chadsvasc', { female: true, age: '2', htn: true }).value, '4 balai');
+    assert.equal(calc('chadsvasc', { female: true }).level, 'low');
+    assert.equal(calc('qtc', { qt: 400, hr: 60, sex: 'm' }).value, 'Fridericia 400 ms, Bazett 400 ms');
+    assert.equal(calc('news2', { rr: 16, spo2: 98, temp: 37, sbp: 120, hr: 70 }).value, '0 balai');
+    assert.equal(calc('news2', { rr: 25, spo2: 98, temp: 37, sbp: 120, hr: 70 }).level, 'mid');
+    assert.equal(calc('news2', { rr: 25, spo2: 90, o2: true, temp: 39.5, sbp: 85, hr: 135 }).level, 'high');
+    assert.equal(calc('gbs', { urea: 9, hb: 110, sex: 'm', sbp: 95, hr: true }).value, '9 balai');
+    assert.equal(calc('gcs', { e: '4', v: '5', m: '6' }).value, '15 (A4 K5 M6)');
+    assert.equal(calc('wells', { hr: true, prior: true }).value, '3 balo');
+    assert.equal(calc('curb65', { c: true, u: true, age: true }).level, 'high');
+    assert.equal(calc('bmi', { weight: 80, height: 180 }).value, 'KMI 24,7 kg/m², KPP 2 m²');
+    assert.equal(calc('dose', { weight: 70, perkg: 1, conc: 100 }).value, '70 mg = 0,7 ml');
+    assert.equal(calc('cockcroft', { age: 70, weight: NaN, sex: 'm', creat: 100 }), null);
+});
+
+test('calculators open from home without login and update the result while typing', async () => {
+    const h = harness({ home: true });
+    await h.run('startApp()');
+    await h.settle();
+    const tile = h.document.getElementById('homeGrid').children.find(t => t.getAttribute('data-section') === 'calculators');
+    assert.equal(tile.children.some(el => el.textContent === 'Ruošiama'), false);
+    await tile.dispatch('click');
+    const card = h.document.getElementById('calcBody').all().find(el => el.getAttribute('data-calc') === 'cockcroft');
+    await card.dispatch('click');
+    assert.equal(h.document.getElementById('calcValue').textContent, 'Įveskite duomenis');
+    for (const [key, value] of [['age', '70'], ['weight', '70'], ['creat', '100']]) {
+        const input = h.document.getElementById('calc-' + key);
+        input.value = value;
+        await input.dispatch('input');
+    }
+    assert.equal(h.document.getElementById('calcValue').textContent, '60 ml/min');
+    h.document.getElementById('calc-weight').value = '70,5';
+    await h.document.getElementById('calc-weight').dispatch('input');
+    assert.equal(h.document.getElementById('calcValue').textContent, '61 ml/min');
 });

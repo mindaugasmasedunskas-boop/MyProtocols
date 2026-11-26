@@ -6,6 +6,16 @@ ar tikros duomenų bazės saugumo įrodymas.
 
 ## Patvirtinti atlikti darbai
 
+- [x] Skaičiuoklės (šaka `codex/calculators`, `js/calculators.js`), viešos,
+  skaičiuojama tik naršyklėje, duomenys niekur nesiunčiami. 19 skaičiuoklių:
+  Cockcroft-Gault, CKD-EPI 2021, koreguotas kalcis, Na pokytis
+  (Adrogué-Madias), osmoliariškumas, anijonų tarpas, CHA₂DS₂-VASc, HAS-BLED,
+  HEART, Wells (PATE), PERC, QTc (Fridericia, Bazett), qSOFA, NEWS2,
+  CURB-65, Glasgow-Blatchford, GKS, KMI ir KPP, dozė pagal svorį. Patikra:
+  58 izoliuoti testai praėjo, formulės sutikrintos su žinomomis
+  reikšmėmis; naršyklėje patikrinta. Klinikinis turinys nepatvirtintas
+  ligoninės; nereikalingas naudotojas išmes.
+
 - [x] Kalendorius (šaka `codex/calendar`, `js/calendar.js`), tik prisijungus:
   šios dienos skelbimai (svarbūs viršuje, geltoni), artimiausi įvykiai,
   mėnesio kalendorius su pažymėtomis dienomis, budėjimų grafikai (PDF, PNG,

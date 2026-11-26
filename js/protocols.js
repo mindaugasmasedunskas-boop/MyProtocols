@@ -255,6 +255,10 @@ function showProtocolList() {
         showCalendar();
         return;
     }
+    if (currentSection === "calculators") {
+        showCalculators();
+        return;
+    }
     if (COMING_SOON[currentSection]) {
         showComingSoon(currentSection);
         return;
