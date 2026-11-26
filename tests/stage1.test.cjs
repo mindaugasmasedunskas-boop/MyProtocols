@@ -1154,3 +1154,15 @@ test('admin tags an algorithm with departments', async () => {
     await h.document.getElementById('protocolForm').dispatch('submit');
     assert.equal(JSON.stringify(h.calls.inserts[0].departments), JSON.stringify(['Priėmimo']));
 });
+
+test('staff form shows each list directly under its own heading', async () => {
+    const h = harness({ session, profile: adminProfile, profiles: async () => ({ data: structuredClone(sampleProfiles), error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showStaff()');
+    const box = h.document.getElementById('staffBody').children.find(el => el.className.includes('staff-groups'));
+    const order = box.children.map(el => el.getAttribute('id') || el.textContent);
+    assert.ok(order.indexOf('Grupių sąrašas') < order.indexOf('staffGroupsInput'));
+    assert.ok(order.indexOf('staffGroupsInput') < order.indexOf('Skyrių sąrašas'));
+    assert.ok(order.indexOf('Skyrių sąrašas') < order.indexOf('departmentsInput'));
+});
