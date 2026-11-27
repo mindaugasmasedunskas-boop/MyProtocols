@@ -193,7 +193,7 @@ async function loadProfile(user = currentUser, version = authVersion) {
     try {
         const { data, error } = await supabaseClient
             .from("profiles")
-            .select("id,role,full_name,username,staff_group,departments,must_change_password")
+            .select("id,role,full_name,username,staff_group,departments,must_change_password,can_view_reports")
             .eq("id", user.id)
             .maybeSingle();
         if (error) throw error;

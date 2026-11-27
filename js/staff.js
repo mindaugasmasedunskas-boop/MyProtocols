@@ -25,7 +25,7 @@ async function loadStaff() {
     try {
         const [people, groups] = await Promise.all([
             supabaseClient.from("profiles")
-                .select("id,email,full_name,username,role,staff_group,departments")
+                .select("id,email,full_name,username,role,staff_group,departments,can_view_reports")
                 .order("email"),
             supabaseClient.from("app_settings").select("value").eq("key", "staff_groups").maybeSingle()
         ]);
@@ -151,6 +151,20 @@ function staffRow(person) {
         renderStaff();
     });
     departments.append(edit, reset);
+    if (person.role !== "admin") {
+        const reportLabel = document.createElement("label");
+        reportLabel.className = "staff-report";
+        const reportBox = document.createElement("input");
+        reportBox.setAttribute("type", "checkbox");
+        reportBox.setAttribute("data-report", String(person.id));
+        reportBox.checked = Boolean(person.can_view_reports);
+        reportBox.addEventListener("change", () => saveStaffFields(person, { can_view_reports: reportBox.checked }, status,
+            () => { reportBox.checked = Boolean(person.can_view_reports); }));
+        const reportText = document.createElement("span");
+        reportText.textContent = "Mato ataskaitas";
+        reportLabel.append(reportBox, reportText);
+        departments.append(reportLabel);
+    }
 
     row.append(who, select, departments, status);
 

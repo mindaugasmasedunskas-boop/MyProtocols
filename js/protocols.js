@@ -278,6 +278,10 @@ function showProtocolList() {
         showDocuments();
         return;
     }
+    if (currentSection === "ackreport") {
+        showAckReport();
+        return;
+    }
     if (currentSection === "vacations") {
         showVacations();
         return;

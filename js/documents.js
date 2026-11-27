@@ -120,6 +120,12 @@ async function showDocuments() {
         add.addEventListener("click", () => showDocumentForm());
         document.getElementById("sectionNav").append(add);
     }
+    if (canViewReports()) {
+        const report = document.createElement("button");
+        report.textContent = "Susipažinimo ataskaita";
+        report.addEventListener("click", () => showAckReport());
+        document.getElementById("sectionNav").append(report);
+    }
     document.getElementById("documentSearch").addEventListener("input", renderDocuments);
     renderDocuments();
 

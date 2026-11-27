@@ -20,6 +20,12 @@ ar tikros duomenų bazės saugumo įrodymas.
   kūrimas, privalomas slaptažodžio pakeitimas, automatinis skyrius.
 - [x] „Mano paskyra“ (šaka `codex/staff-form-fix`): paspaudus savo vardą
   darbuotojas mato savo duomenis ir keičia slaptažodį. Naudotojas patvirtino.
+- [ ] Susipažinimo ataskaita (šaka `codex/ack-report`, `js/ack-report.js`,
+  `supabase/sql/ack-reports.sql`): suvestinė pagal dokumentus, filtrai pagal
+  skyrių ir pareigas, spausdinimas. Admin mato visus; asmuo su
+  `can_view_reports` (varnelė „Mato ataskaitas“ Personale) mato tik bendrų
+  skyrių darbuotojus (RLS). Trigeris neleidžia ne adminui keisti šios teisės
+  ir skyrių. Patikra: 94 izoliuoti testai. Reikia naudotojo SQL.
 - [ ] Dokumentai, 2 etapas (šaka `codex/documents-ack`, `supabase/sql/document-acks.sql`):
   „Reikia susipažinti“ su adresatais (pareigos, skyriai; tuščia = visi),
   darbuotojas atsidaro failą, uždeda varnelę ir patvirtina; įrašas
