@@ -158,7 +158,7 @@ function harness(options = {}) {
         supabaseClient: options.client === null ? null : client,
         supabaseInitializationError: 'Nepavyko įkelti prisijungimo bibliotekos.'
     });
-    for (const file of ['utils', 'departments', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'triage', 'documents', 'vacations', 'staff', 'admin', 'admin-protocols', 'suggestions']) {
+    for (const file of ['utils', 'departments', 'auth', 'protocols', 'contacts', 'home', 'calendar', 'calculators', 'triage', 'documents', 'ack-report', 'vacations', 'staff', 'admin', 'admin-protocols', 'suggestions']) {
         vm.runInContext(fs.readFileSync(path.join(sourceRoot, 'js', file + '.js'), 'utf8'), context, { filename: file + '.js' });
     }
     // Most tests exercise the protocol list; home-screen tests set this back.
@@ -1142,6 +1142,74 @@ test('admin changes a document: new version replaces the file and keeps audience
     assert.equal(update.file_name, 'higiena2.pdf');
     assert.ok(update.version_at);
     assert.equal(JSON.stringify(h.calls.removed.flat()), JSON.stringify(['2026/7.pdf']));
+});
+
+const reportPeople = [
+    { id: 'n1', full_name: 'Ona', staff_group: 'Slaugytojai', departments: ['Priėmimas'] },
+    { id: 'n2', full_name: '<i>Rūta</i>', staff_group: 'Slaugytojai', departments: ['Priėmimas'] },
+    { id: 'n3', full_name: 'Kita', staff_group: 'Slaugytojai', departments: ['Chirurgija'] },
+    { id: 'd1', full_name: 'Jonas', staff_group: 'Gydytojai', departments: ['Priėmimas'] }
+];
+const reportOptions = profile => ({ session, profile,
+    documents: async () => ({ data: [structuredClone(ackDocument), { id: 9, title: 'Be susipažinimo', file_path: 'z.pdf', requires_ack: false }], error: null }),
+    profiles: async () => ({ data: structuredClone(reportPeople), error: null }),
+    acks: async () => ({ data: [{ document_id: 7, user_id: 'n1', version_key: 'abc', acknowledged_at: '2026-11-25T08:30:00Z' }], error: null }) });
+
+test('reporter sees only own departments, read only, with names escaped', async () => {
+    const reporter = async () => ({ data: { id: user.id, role: 'user', staff_group: 'Slaugytojai', departments: ['Priėmimas'], can_view_reports: true }, error: null });
+    const h = harness(reportOptions(reporter));
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showDocuments()');
+    const button = h.document.getElementById('sectionNav').children.find(b => b.textContent === 'Susipažinimo ataskaita');
+    assert.ok(button);
+    await button.dispatch('click');
+    const docs = h.document.getElementById('reportBody').children;
+    assert.equal(docs.length, 1);
+    assert.equal(docs[0].children[0].children[1].textContent, '1 iš 2 (50 %)');
+    await docs[0].children[0].dispatch('click');
+    const rows = h.document.getElementById('reportBody').children[0].children[2].children;
+    assert.equal(rows.map(r => r.children[0].textContent).join('|'), '<i>Rūta</i>|Ona');
+    assert.equal(rows[0].children[2].textContent, 'Nesusipažino');
+    const options = h.document.getElementById('reportDepartment').children.map(o => o.value);
+    assert.equal(JSON.stringify(options), JSON.stringify(['', 'Priėmimas']));
+    assert.equal(h.calls.inserts.length + h.calls.updates.length + h.calls.deletes.length, 0);
+});
+
+test('employee without the right cannot open the report', async () => {
+    const h = harness(reportOptions(nurseProfile));
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showDocuments()');
+    assert.equal(h.document.getElementById('sectionNav').children.some(b => b.textContent === 'Susipažinimo ataskaita'), false);
+    await h.run('showAckReport()');
+    assert.equal(h.document.getElementById('reportBody'), null);
+    assert.equal(h.run('currentSection'), 'home');
+});
+
+test('admin report covers all departments and filters by position', async () => {
+    const h = harness(reportOptions(adminProfile));
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showAckReport()');
+    const count = () => h.document.getElementById('reportBody').children[0].children[0].children[1].textContent;
+    assert.equal(count(), '1 iš 2 (50 %)');
+    const group = h.document.getElementById('reportGroup');
+    group.value = 'Gydytojai';
+    await group.dispatch('change');
+    assert.equal(count(), 'nėra adresatų');
+});
+
+test('admin grants the report right in Personalas', async () => {
+    const h = harness({ session, profile: adminProfile, profiles: async () => ({ data: structuredClone(sampleProfiles), error: null }) });
+    await h.run('startApp()');
+    await h.settle();
+    await h.run('showStaff()');
+    const box = h.document.getElementById('staffTable').all().find(el => el.getAttribute('data-report'));
+    assert.ok(box);
+    box.checked = true;
+    await box.dispatch('change');
+    assert.equal(JSON.stringify(h.calls.updates.at(-1).update), JSON.stringify({ can_view_reports: true }));
 });
 
 test('failed document row insert removes the uploaded file', async () => {
